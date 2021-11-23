@@ -1,0 +1,91 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-app
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-app
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-app
+    {{- with .Values.app.annotations }}
+      annotations:
+      {{- range $key, $value := . }}
+        {{ $key }}: {{ $value }}
+      {{- end }}
+    {{- end }}
+    spec:
+      {{- if .Values.app.persistence.enabled }}
+      volumeClaimTemplates:
+        - metadata:
+            name: wger-media
+          {{- with .Values.app.persistence.annotations }}
+            annotations:
+            {{- range $key, $value := . }}
+              {{ $key }}: {{ $value }}
+            {{- end }}
+          {{- end }}
+          spec:
+            accessModes:
+            {{- range .Values.app.persistence.accessModes }}
+              - {{ . | quote }}
+            {{- end }}
+            resources:
+              requests:
+                storage: {{ .Values.app.persistence.size | quote }}
+            storageClassName:  {{ .Values.app.persistence.storageClass | quote }}
+      {{- end }}
+      containers:
+        - name: wger
+          image: {{ .Values.app.global.image }}
+          resources:
+            requests:
+              memory: {{ .Values.app.resources.requests.memory }}
+              cpu: {{ .Values.app.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.app.resources.limits.memory }}
+              cpu: {{ .Values.app.resources.limits.cpu }}
+          {{- if .Values.app.persistence.enabled }}
+          volumeMounts:
+            - name: wger-media
+              mountPath: /home/wger/media
+              readOnly: false
+          {{- end }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DJANGO_DB_ENGINE
+              value: "django.db.backends.postgresql"
+            - name: DJANGO_DB_USER
+              value: {{ .Values.postgresql.global.postgresqlUsername | quote}}
+            - name: DJANGO_DB_PASSWORD
+              value: {{ .Values.postgresql.global.postgresqlPassword | quote }}
+            - name: DJANGO_DB_DATABASE
+              value: {{ .Values.postgresql.global.postgresqlDatabase | quote }}
+            - name: DJANGO_DB_HOST
+              value: "wger-postgres"
+            - name: DJANGO_DB_PORT
+              value: {{ .Values.postgresql.global.servicePort | quote }}
+            - name: DJANGO_CACHE_BACKEND
+              value: "django_redis.cache.RedisCache"
+            - name: DJANGO_CACHE_LOCATION
+              value: "redis://wger-redis:{{ .Values.redisPort }}/1"
+            - name: DJANGO_CACHE_CLIENT_CLASS
+              value: django_redis.client.DefaultClient
+            - name: DJANGO_MEDIA_ROOT
+              value: /home/wger/media
+            - name: SITE_URL
+              value: {{ .Values.app.ingress.url }}
+        {{- with .Values.app.environment }}
+          {{- range  . }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+          {{- end }}
+        {{- end }}
