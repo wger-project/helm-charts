@@ -2,14 +2,14 @@
 # App settings
 app:
   global:
-    image: wger/server:{{ .Chart.AppVersion }}
+    image: wger/server:latest
   ingress:
     enabled: true
     url: fit.example.com
     tls: true
     annotations: {}
   persistence:
-    enabled: true
+    enabled: false
     annotations: {}
     storageClass: ""
     accessModes:
@@ -46,7 +46,7 @@ postgresql:
       memory: 512Mi
       cpu: 300m
   persistence:
-    enabled: true
+    enabled: false
     mountPath: /bitnami/postgresql
     storageClass: ""
     accessModes:
@@ -64,7 +64,7 @@ redis:
   master:
     containerPort: 6379
     persistence:
-      enabled: true
+      enabled: false
       path: /data
       storageClass: ""
       accessModes:
