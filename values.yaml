@@ -3,18 +3,20 @@
 app:
   global:
     image: wger/server:latest
+    imagePullPolicy: Always
+    annotations: {}
   ingress:
-    enabled: true
+    enabled: false
     url: fit.example.com
     tls: true
     annotations: {}
   persistence:
     enabled: false
-    annotations: {}
     storageClass: ""
     accessModes:
       - ReadWriteOnce
     size: 8Gi
+    annotations: {}
   resources:
     requests:
       memory: 128Mi
@@ -22,7 +24,6 @@ app:
     limits:
       memory: 512Mi
       cpu: 500m
-  annotations: {}
   environment:
     - name: TIME_ZONE
       value: UTC

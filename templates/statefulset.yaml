@@ -5,18 +5,24 @@ metadata:
   name: {{ .Release.Name }}-app
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Release.Name }}
+  {{- with .Values.app.global.annotations }}
+  annotations:
+  {{- range $key, $value := . }}
+    {{ $key }}: {{ $value }}
+  {{- end }}
+  {{- end }}
 spec:
   replicas: 1
   serviceName: {{ .Release.Name }}-http
   selector:
     matchLabels:
-      app: {{ .Release.Name }}-app
+      app.kubernetes.io/name: {{ .Release.Name }}-app
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}-app
-    {{- with .Values.app.annotations }}
+        app.kubernetes.io/name: {{ .Release.Name }}-app
+    {{- with .Values.app.global.annotations }}
       annotations:
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value }}
@@ -26,6 +32,7 @@ spec:
       containers:
         - name: wger
           image: {{ .Values.app.global.image }}
+          imagePullPolicy: {{ .Values.app.global.imagePullPolicy }}
           resources:
             requests:
               memory: {{ .Values.app.resources.requests.memory }}
@@ -57,13 +64,15 @@ spec:
             - name: DJANGO_CACHE_BACKEND
               value: "django_redis.cache.RedisCache"
             - name: DJANGO_CACHE_LOCATION
-              value: "redis://wger-redis:{{ .Values.redisPort }}/1"
+              value: "redis://wger-redis:{{ .Values.redis.master.containerPort }}/1"
             - name: DJANGO_CACHE_CLIENT_CLASS
               value: django_redis.client.DefaultClient
             - name: DJANGO_MEDIA_ROOT
               value: /home/wger/media
+            {{- if .Values.app.ingress.enabled }}
             - name: SITE_URL
               value: {{ .Values.app.ingress.url }}
+            {{- end }}
         {{- with .Values.app.environment }}
           {{- range  . }}
             - name: {{ .name | quote }}

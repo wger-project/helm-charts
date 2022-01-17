@@ -5,7 +5,13 @@ metadata:
   name: {{ .Release.Name }}-http
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Release.Name }}
+  {{- with .Values.app.global.annotations }}
+  annotations:
+  {{- range $key, $value := . }}
+    {{ $key }}: {{ $value }}
+  {{- end }}
+  {{- end }}
 spec:
   type: ClusterIP
   ports:
@@ -14,4 +20,4 @@ spec:
       port: 8080
       targetPort: 8080
   selector:
-    app: {{ .Release.Name }}-app
+    app.kubernetes.io/name: {{ .Release.Name }}-app
