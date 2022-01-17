@@ -52,19 +52,19 @@ spec:
             - name: DJANGO_DB_ENGINE
               value: "django.db.backends.postgresql"
             - name: DJANGO_DB_USER
-              value: {{ .Values.postgresql.global.postgresqlUsername | quote}}
+              value: {{ .Values.postgresql.global.postgresql.postgresqlUsername | quote }}
             - name: DJANGO_DB_PASSWORD
-              value: {{ .Values.postgresql.global.postgresqlPassword | quote }}
+              value: {{ .Values.postgresql.global.postgresql.postgresqlPassword | quote }}
             - name: DJANGO_DB_DATABASE
-              value: {{ .Values.postgresql.global.postgresqlDatabase | quote }}
+              value: {{ .Values.postgresql.global.postgresql.postgresqlDatabase | quote }}
             - name: DJANGO_DB_HOST
-              value: "wger-postgres"
+              value: "wger-postgresql"
             - name: DJANGO_DB_PORT
-              value: {{ .Values.postgresql.global.servicePort | quote }}
+              value: {{ .Values.postgresql.global.postgresql.servicePort | quote }}
             - name: DJANGO_CACHE_BACKEND
               value: "django_redis.cache.RedisCache"
             - name: DJANGO_CACHE_LOCATION
-              value: "redis://wger-redis:{{ .Values.redis.master.containerPort }}/1"
+              value: "redis://wger-redis-master:{{ .Values.redis.master.containerPort }}/1"
             - name: DJANGO_CACHE_CLIENT_CLASS
               value: django_redis.client.DefaultClient
             - name: DJANGO_MEDIA_ROOT

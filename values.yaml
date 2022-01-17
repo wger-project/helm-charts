@@ -35,10 +35,11 @@ app:
 postgresql:
   # Note: keep these variables present as the chart uses them for the StatefulSet
   global:
-    postgresqlDatabase: wger
-    postgresqlUsername: wger
-    postgresqlPassword: wger
-    servicePort: 5432
+    postgresql:
+      postgresqlDatabase: wger
+      postgresqlUsername: wger
+      postgresqlPassword: wger
+      servicePort: 5432
   resources:
     requests:
       memory: 128Mi
@@ -60,7 +61,7 @@ redis:
   # Note: keep these variables present as the chart uses them for the StatefulSet
   auth:
     password: wger
-    enabled: true
+    enabled: false
     sentinel: true
   master:
     containerPort: 6379

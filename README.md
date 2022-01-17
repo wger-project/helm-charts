@@ -105,16 +105,18 @@ The application reuses the following settings directly from the Bitnami Helm cha
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `postgresql.global.postgresqlDatabase` | PostgreSQL database name to use for wger | String | `wger` |
-| `postgresql.global.postgresqlUsername` | PostgreSQL username to use for wger | String | `wger` |
-| `postgresql.global.postgresqlPassword` | PostgreSQL password to use for wger | String | `wger` |
-| `postgresql.global.servicePort` | Port for the PostgreSQL deployment | Integer | `5432` |
+| `postgresql.global.postgresql.postgresqlDatabase` | PostgreSQL database name to use for wger | String | `wger` |
+| `postgresql.global.postgresql.postgresqlUsername` | PostgreSQL username to use for wger | String | `wger` |
+| `postgresql.global.postgresql.postgresqlPassword` | PostgreSQL password to use for wger | String | `wger` |
+| `postgresql.global.postgresql.servicePort` | Port for the PostgreSQL deployment | Integer | `5432` |
 
 #### Redis
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `redis.master.containerPort` | Port for the Redis deployment | String | `6379` |
+| `redis.auth.enabled` | Whether to enable redis login. Currently, only `false` is supported | Boolean | `false` |
+| `redis.auth.password` | Password for redis login. Not required if `redis.auth.enabled` is `false` | String | `wger` |
+| `redis.master.containerPort` | Port for the Redis deployment | Integer | `6379` |
 
 ## Upgrading
 
