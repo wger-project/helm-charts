@@ -143,6 +143,57 @@ Generally:
 * if you have a cool idea, create a fork and send pull requests
 * assure that your code is well-formed (hint: [`helm lint`](https://helm.sh/docs/helm/helm_lint/) is a useful command). This is enforced using continuous integration.
 
+## Developing locally
+
+In order to develop locally, you will need [minikube](https://minikube.sigs.k8s.io/docs/) installed.
+It sets a local Kubernetes cluster that you can use for testing the Helm chart.
+
+If this is your first time developing a Helm chart, you'd want to try the following:
+
+```bash
+# start minikube
+$ minikube start
+
+# deploy the helm chart using the command from above
+$ helm dependency update
+$ helm upgrade --install wger . --namespace wger --create-namespace
+
+# observe that the pods start correctly
+$ kubectl get pods -n wger
+NAME                    READY   STATUS    RESTARTS      AGE
+wger-app-0              1/1     Running   1 (71s ago)   3m7s
+wger-postgresql-0       1/1     Running   3 (88s ago)   22h
+wger-redis-master-0     1/1     Running   3 (71s ago)   22h
+wger-redis-replicas-0   1/1     Running   3 (71s ago)   22h
+wger-redis-replicas-1   1/1     Running   3 (71s ago)   22h
+wger-redis-replicas-2   1/1     Running   3 (71s ago)   22h
+
+# read the logs from the pods
+$ kubectl logs wger-app-0 -n wger
+PostgreSQL started :)
+*** Database does not exist, creating one now
+Operations to perform:
+  Apply all migrations: auth, authtoken, config, contenttypes, core, easy_thumbnails, exercises, gallery, gym, mailer, manager, measurements, nutrition, sessions, sites, weight
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+.....
+
+# if you need to debug something in the pods, you can start a shell
+$ kubectl exec -it wger-app-0 -n wger -- bash
+wger@wger-app-0:~/src$
+
+# start a local proxy to test the web interface
+# Wger will then be available on http://localhost:8001/api/v1/namespaces/wger/services/wger-http:8000/proxy/en
+$ kubectl proxy
+Starting to serve on 127.0.0.1:8001
+
+# when you are finished with the testing, stop minikube
+$ minikube stop
+
+# if you'd like to start clean, you can delete the whole cluster
+$ minikube delete
+```
+
 ## Contact
 
 Feel free to contact us if you found this useful or if there was something that didn't behave as you expected. We can't fix what we don't know about, so please report liberally. If you're not sure if something is a bug or not, feel free to file a bug anyway.
