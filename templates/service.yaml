@@ -9,7 +9,7 @@ metadata:
   {{- with .Values.app.global.annotations }}
   annotations:
   {{- range $key, $value := . }}
-    {{ $key }}: {{ $value }}
+    {{ $key }}: {{ $value | quote}}
   {{- end }}
   {{- end }}
 spec:
