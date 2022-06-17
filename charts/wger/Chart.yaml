@@ -3,11 +3,12 @@ apiVersion: v2
 name: wger
 description: A Helm chart for Wger installation on Kubernetes
 type: application
-version: 0.0.1-alpha
+version: 0.1.2
+appVersion: 2.1.0
 dependencies:
   - name: postgresql
-    version: 10.13.8
+    version: 11.6.7
     repository: https://charts.bitnami.com/bitnami
   - name: redis
-    version: 15.6.0
+    version: 16.12.2
     repository: https://charts.bitnami.com/bitnami
