@@ -19,6 +19,10 @@ jobs:
         uses: azure/setup-helm@v1
         with:
           version: v3.4.0
+      
+      - name: Add dependent chart repositories
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
 
       - uses: actions/setup-python@v2
         with:
