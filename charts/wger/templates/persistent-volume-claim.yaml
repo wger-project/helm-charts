@@ -1,3 +1,4 @@
+# yamllint disable rule:document-start
 {{- if .Values.app.persistence.enabled }}
 ---
 apiVersion: v1

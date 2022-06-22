@@ -1,8 +1,11 @@
+# yamllint disable rule:line-length
+---
 # This is a basic workflow to help you get started with Actions
 
 name: Release helm chart
 
 # Controls when the workflow will run
+# yamllint disable-line rule:truthy
 on:
   # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
@@ -39,7 +42,7 @@ jobs:
         uses: azure/setup-helm@v1
         with:
           version: v3.8.1
-      
+
       - name: Add dependent chart repositories
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami

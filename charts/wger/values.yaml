@@ -43,7 +43,7 @@ ingress:
   url: fit.example.com
   tls: true
   annotations: {}
-    
+
 service:
   annotations: {}
   type: ClusterIP
