@@ -6,7 +6,7 @@ name: wger
 description: A Helm chart for Wger installation on Kubernetes
 type: application
 maintainers:
-  - name: Roland Geider
+  - name: rolandgeider
     email: roland@geider.net
 dependencies:
   - name: postgresql
