@@ -1,10 +1,13 @@
 ---
 apiVersion: v2
+version: 0.1.2
+appVersion: 2.1.0
 name: wger
 description: A Helm chart for Wger installation on Kubernetes
 type: application
-version: 0.1.2
-appVersion: 2.1.0
+maintainers:
+  - name: Roland Geider
+    email: roland@geider.net
 dependencies:
   - name: postgresql
     version: 11.6.7
