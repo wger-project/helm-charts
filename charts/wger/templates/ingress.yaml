@@ -1,24 +1,25 @@
+{{- if .Values.ingress.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-ingress
-  namespace: {{ .Release.Namespace }}
-{{- with .Values.app.ingress.annotations }}
+  name: {{.Release.Name}}-ingress
+  namespace: {{.Release.Namespace}}
+{{- with .Values.ingress.annotations }}
   annotations:
   {{- range $key, $value := . }}
     {{ $key }}: {{ $value | quote}}
   {{- end }}
 {{- end }}
 spec:
-  {{- if .Values.app.ingress.tls }}
+  {{- if .Values.ingress.tls }}
   tls:
     - hosts:
-        - {{ .Values.app.ingress.url }}
+        - {{ .Values.ingress.url }}
       secretName: {{ .Release.Name }}-tls
   {{- end }}
   rules:
-    - host: {{ .Values.app.ingress.url }}
+    - host: {{ .Values.ingress.url }}
       http:
         paths:
         - pathType: Prefix
@@ -27,4 +28,5 @@ spec:
             service:
               name: {{ .Release.Name }}-http
               port:
-                number: 8080
+                number: 8000
+{{- end }}
