@@ -21,3 +21,29 @@ spec:
       targetPort: 8000
   selector:
     app.kubernetes.io/name: {{ .Release.Name }}-app
+
+{{- if .Values.celery.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Release.Name}}-celery
+  namespace: {{.Release.Namespace}}
+  labels:
+    app.kubernetes.io/name: {{.Release.Name}}
+  {{- with .Values.celery.service.annotations }}
+  annotations:
+  {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote}}
+  {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.celery.service.type }}
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.celery.service.port }}
+      targetPort: {{ .Values.celery.flower.port }}
+  selector:
+    app.kubernetes.io/name: {{ .Release.Name }}-celery
+{{- end }}

@@ -44,6 +44,24 @@ ingress:
   tls: true
   annotations: {}
 
+celery:
+  enabled: false
+  environment: {}
+  annotations: {}
+  worker:
+    resources: {}
+  beat:
+    resources: {}
+  flower:
+    resources: {}
+    port: 5555
+  service:
+    annotations: {}
+    port: 5555
+    type: clusterIP
+
+
+
 service:
   annotations: {}
   type: ClusterIP

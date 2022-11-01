@@ -1,0 +1,211 @@
+{{- if .Values.celery.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-celery
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+  {{- with .Values.app.global.annotations }}
+  annotations:
+    {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote}}
+    {{- end }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.celery.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-celery
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-celery
+      {{- with .Values.app.global.annotations }}
+      annotations:
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote}}
+        {{- end }}
+      {{- end }}
+    spec:
+      containers:
+        - name: celery-worker
+          command:
+            - "/start-worker"
+          image: {{ .Values.app.global.image }}
+          imagePullPolicy: {{ .Values.app.global.imagePullPolicy }}
+          {{- with .Values.celery.worker.resources }}
+          resources:
+            requests:
+              memory: {{ .requests.memory }}
+              cpu: {{ .requests.cpu }}
+            limits:
+              memory: {{ .limits.memory }}
+              cpu: {{ .limits.cpu }}
+          {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - "celery" 
+              - "-A"
+              - "wger"
+              - "inspect"
+              - "ping"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          env:
+            - name: DJANGO_DB_ENGINE
+              value: "django.db.backends.postgresql"
+            - name: DJANGO_DB_USER
+              value: {{ .Values.postgresql.global.postgresql.auth.username | quote }}
+            - name: DJANGO_DB_PASSWORD
+              value: {{ .Values.postgresql.global.postgresql.auth.password | quote }}
+            - name: DJANGO_DB_DATABASE
+              value: {{ .Values.postgresql.global.postgresql.auth.database | quote }}
+            - name: DJANGO_DB_HOST
+              value: "wger-postgresql"
+            - name: DJANGO_DB_PORT
+              value: {{ .Values.postgresql.global.postgresql.service.ports.postgresql | quote }}
+            - name: DJANGO_CACHE_BACKEND
+              value: "django_redis.cache.RedisCache"
+            - name: DJANGO_CACHE_LOCATION
+              value: "redis://wger-redis-master:{{ .Values.redis.master.containerPort }}/1"
+            - name: DJANGO_CACHE_CLIENT_CLASS
+              value: django_redis.client.DefaultClient
+            - name: DJANGO_CACHE_TIMEOUT
+              value: "10"
+            - name: DJANGO_DEBUG
+              value: "True"
+            - name: DJANGO_MEDIA_ROOT
+              value: /home/wger/media
+            {{- if .Values.ingress.enabled }}
+            - name: SITE_URL
+              value: {{ .Values.ingress.url }}
+            {{- end }}
+            {{- with .Values.celery.environment }}
+            {{- range  . }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+        - name: celery-beat
+          command:
+            - "/start-beat"
+          image: {{ .Values.app.global.image }}
+          imagePullPolicy: {{ .Values.app.global.imagePullPolicy }}
+          {{- with .Values.celery.beat.resources }}
+          resources:
+            requests:
+              memory: {{ .requests.memory }}
+              cpu: {{ .requests.cpu }}
+            limits:
+              memory: {{ .limits.memory }}
+              cpu: {{ .limits.cpu }}
+          {{- end }}
+          env:
+            - name: DJANGO_DB_ENGINE
+              value: "django.db.backends.postgresql"
+            - name: DJANGO_DB_USER
+              value: {{ .Values.postgresql.global.postgresql.auth.username | quote }}
+            - name: DJANGO_DB_PASSWORD
+              value: {{ .Values.postgresql.global.postgresql.auth.password | quote }}
+            - name: DJANGO_DB_DATABASE
+              value: {{ .Values.postgresql.global.postgresql.auth.database | quote }}
+            - name: DJANGO_DB_HOST
+              value: "wger-postgresql"
+            - name: DJANGO_DB_PORT
+              value: {{ .Values.postgresql.global.postgresql.service.ports.postgresql | quote }}
+            - name: DJANGO_CACHE_BACKEND
+              value: "django_redis.cache.RedisCache"
+            - name: DJANGO_CACHE_LOCATION
+              value: "redis://wger-redis-master:{{ .Values.redis.master.containerPort }}/1"
+            - name: DJANGO_CACHE_CLIENT_CLASS
+              value: django_redis.client.DefaultClient
+            - name: DJANGO_CACHE_TIMEOUT
+              value: "10"
+            - name: DJANGO_DEBUG
+              value: "True"
+            - name: DJANGO_MEDIA_ROOT
+              value: /home/wger/media
+            {{- if .Values.ingress.enabled }}
+            - name: SITE_URL
+              value: {{ .Values.ingress.url }}
+            {{- end }}
+            {{- with .Values.app.environment }}
+            {{- range  . }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+        - name: celery-flower
+          command:
+            - "/start-flower"
+          image: {{ .Values.app.global.image }}
+          imagePullPolicy: {{ .Values.app.global.imagePullPolicy }}
+          {{- with .Values.celery.flower.resources }}
+          resources:
+            requests:
+              memory: {{ .requests.memory }}
+              cpu: {{ .requests.cpu }}
+            limits:
+              memory: {{ .limits.memory }}
+              cpu: {{ .limits.cpu }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.celery.flower.port }}
+          env:
+            - name: DJANGO_DB_ENGINE
+              value: "django.db.backends.postgresql"
+            - name: DJANGO_DB_USER
+              value: {{ .Values.postgresql.global.postgresql.auth.username | quote }}
+            - name: DJANGO_DB_PASSWORD
+              value: {{ .Values.postgresql.global.postgresql.auth.password | quote }}
+            - name: DJANGO_DB_DATABASE
+              value: {{ .Values.postgresql.global.postgresql.auth.database | quote }}
+            - name: DJANGO_DB_HOST
+              value: "wger-postgresql"
+            - name: DJANGO_DB_PORT
+              value: {{ .Values.postgresql.global.postgresql.service.ports.postgresql | quote }}
+            - name: DJANGO_CACHE_BACKEND
+              value: "django_redis.cache.RedisCache"
+            - name: DJANGO_CACHE_LOCATION
+              value: "redis://wger-redis-master:{{ .Values.redis.master.containerPort }}/1"
+            - name: DJANGO_CACHE_CLIENT_CLASS
+              value: django_redis.client.DefaultClient
+            - name: DJANGO_CACHE_TIMEOUT
+              value: "10"
+            - name: DJANGO_DEBUG
+              value: "True"
+            - name: DJANGO_MEDIA_ROOT
+              value: /home/wger/media
+            {{- if .Values.ingress.enabled }}
+            - name: SITE_URL
+              value: {{ .Values.ingress.url }}
+            {{- end }}
+        {{- with .Values.app.environment }}
+          {{- range  . }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+          {{- end }}
+        {{- end }}
+      initContainers:
+        - name: init-container
+          image: docker.io/busybox:latest
+          command:
+            - /bin/sh
+            - -c
+            - until nc -zvw10 {{.Release.Name}}-postgresql {{ .Values.postgresql.global.postgresql.service.ports.postgresql }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgresql:{{ .Values.postgresql.global.postgresql.service.ports.postgresql }}) "; sleep 2; done &&
+              until nc -zvw10 {{.Release.Name}}-redis-master {{ .Values.redis.master.containerPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis-master:{{ .Values.redis.master.containerPort }})"; sleep 2; done
+      {{- if .Values.app.persistence.enabled }}
+      volumes:
+        - name: wger-media
+          persistentVolumeClaim:
+            claimName: wger-media
+        - name: wger-static
+          persistentVolumeClaim:
+            claimName: wger-static
+      {{- end }}
+{{- end }}
