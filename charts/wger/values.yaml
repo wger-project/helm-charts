@@ -13,10 +13,10 @@ app:
       - ReadWriteMany
     size: 8Gi
     annotations: {}
-  existingClaim:
-    enabled: false
-    media: null
-    static: null
+    existingClaim:
+      enabled: false
+      media: null
+      static: null
   resources:
     requests:
       memory: 128Mi

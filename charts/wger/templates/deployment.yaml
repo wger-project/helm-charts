@@ -93,12 +93,12 @@ spec:
             - -c
             - until nc -zvw10 {{.Release.Name}}-postgresql {{ .Values.postgresql.global.postgresql.service.ports.postgresql }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgresql:{{ .Values.postgresql.global.postgresql.service.ports.postgresql }}) "; sleep 2; done &&
               until nc -zvw10 {{.Release.Name}}-redis-master {{ .Values.redis.master.containerPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis-master:{{ .Values.redis.master.containerPort }})"; sleep 2; done
-      {{- if or (.Values.app.persistence.enabled) (.Values.app.existingClaim.enabled) }}
+      {{- if .Values.app.persistence.enabled }}
       volumes:
         - name: wger-media
           persistentVolumeClaim:
-            claimName: {{ .Values.app.existingClaim.media | default "wger-media" | quote }}
+            claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
         - name: wger-static
           persistentVolumeClaim:
-            claimName: {{ .Values.app.existingClaim.static | default "wger-static" | quote }}
+            claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
       {{- end }}
