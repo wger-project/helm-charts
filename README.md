@@ -111,7 +111,32 @@ If you are interested in the environment variables that use values from the helm
 
 ### PostgreSQL and Redis settings
 
-The application reuses the following settings directly from the Bitnami Helm charts. For more options, see [the Postgresql chart](https://github.com/bitnami/charts/tree/master/bitnami/postgresql) and the [the Redis chart](https://github.com/bitnami/charts/tree/master/bitnami/redis).
+The application reuses the following settings directly from the groundhog2k Helm charts, so you don't have to declare them twice:
+
+#### PostgreSQL
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `postgres.enabled` | Enable the PostgreSQL chart | Boolean | `True` |
+| `postgres.settings.superuser	` | Superuser name | String | `wger` |
+| `postgres.settings.superuserPassword` | Password of superuser | String | `wger` |
+| `postgres.userDatabase.name` | PostgreSQL database name to use for wger | String | `wger` |
+| `postgres.service.port` | PostreSQL service port | Integer | `5432` |
+| `postgres.storage.persistentVolumeClaimName` | PVC name when existing storage volume should be used | String | `Nil` |
+| `postgres.storage.requestedSize` | Size for new PVC, when no existing PVC is used | Integer | `8Gi` |
+| `postgres.storage.className` | Storage class name when no existing storage used, takes the cluster default when `Nil` | String | `Nil` |
+
+#### Redis
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `redis.enabled` | Enable the redis chart | Boolean | `true` |
+| `redis.auth.enabled` | Whether to enable redis login. Currently, only `false` is supported | Boolean | `false` |
+| `redis.auth.password` | Password for redis login. Not required if `redis.auth.enabled` is `false` | String | `wger` |
+| `redis.service.serverPort` | Redis server service port | Integer | `6379` |
+| `redis.storage.persistentVolumeClaimName` | PVC name when existing storage volume should be used | String | `Nil` |
+| `redis.storage.requestedSize` | Size for new PVC, when no existing PVC is used | String | `Nil` |
+| `redis.storage.className` | Storage class name when no existing storage used, takes the cluster default when `Nil` | String | `Nil` |
 
 ## Upgrading
 
@@ -169,8 +194,11 @@ wger-redis-replicas-0   1/1     Running   3 (71s ago)   22h
 wger-redis-replicas-1   1/1     Running   3 (71s ago)   22h
 wger-redis-replicas-2   1/1     Running   3 (71s ago)   22h
 
+# read the logs from the init container (postgres & redis check)
+$ kubectl -n wger logs -f -l app.kubernetes.io/name=wger-app -c init-container
+
 # read the logs from the pods
-$ kubectl logs wger-app-0 -n wger
+$ kubectl -n wger logs -f -l app.kubernetes.io/name=wger-app -c wger
 PostgreSQL started :)
 *** Database does not exist, creating one now
 Operations to perform:
@@ -205,6 +233,6 @@ Feel free to contact us if you found this useful or if there was something that 
 
 ## Additional information
 
-* [Bitnami PostgreSQL chart](https://github.com/bitnami/charts/tree/master/bitnami/postgresql)
+* [groundhog2k PostgreSQL chart](https://github.com/groundhog2k/helm-charts/tree/master/charts/postgres)
 
-* [Bitnami Redis chart](https://github.com/bitnami/charts/tree/master/bitnami/redis)
+* [groundhog2k Redis chart](https://github.com/groundhog2k/helm-charts/tree/master/charts/redis)
