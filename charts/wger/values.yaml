@@ -97,6 +97,8 @@ redis:
     requestedSize: 10Gi
     ## the storage class name
     className:
+  service:
+    serverPort: 6379
 
   # For later when redis password in wger is implemented
   # enable .Values.redis.auth.enabled and set the following

@@ -91,8 +91,8 @@ spec:
           command:
             - /bin/sh
             - -c
-            - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}) "; sleep 2; done &&
-              until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis-master:{{ .Values.redis.master.containerPort }})"; sleep 2; done
+            - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
+              until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
       {{- if .Values.app.persistence.enabled }}
       volumes:
         - name: wger-media
