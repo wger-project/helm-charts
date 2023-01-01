@@ -24,6 +24,8 @@ app:
     limits:
       memory: 512Mi
       cpu: 500m
+  django:
+    secretKey: null # if not set a random one is generated
   environment:
     - name: TIME_ZONE
       value: UTC
@@ -41,6 +43,26 @@ app:
       value: None
     - name: FROM_EMAIL
       value: test@test.com
+    - name: WGER_USE_GUNICORN
+      value: "False"
+    - name: SYNC_EXERCISES_ON_STARTUP
+      value: "False"
+    - name: DOWNLOAD_EXERCISE_IMAGES_ON_STARTUP
+      value: "False"
+    - name: ALLOW_REGISTRATION
+      value: "False"
+    - name: ALLOW_GUEST_USERS
+      value: "False"
+    - name: SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: django
+          key: secret-key
+    - name: CSRF_TRUSTED_ORIGINS
+      value: "http://127.0.0.1,http://localhost,https://localhost"
+    - name: DJANGO_DEBUG
+      value: "False"
+
 
 ingress:
   enabled: false
