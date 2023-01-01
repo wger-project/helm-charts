@@ -9,9 +9,15 @@ maintainers:
   - name: rolandgeider
     email: roland@geider.net
 dependencies:
-  - name: postgresql
-    version: 11.6.7
-    repository: https://charts.bitnami.com/bitnami
+  - name: postgres
+    condition: postgres.enabled
+    tags:
+      - groundhog2k
+    version: 0.4.1
+    repository: https://groundhog2k.github.io/helm-charts
   - name: redis
-    version: 16.12.2
-    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+    tags:
+      - groundhog2k
+    version: 0.6.0
+    repository: https://groundhog2k.github.io/helm-charts
