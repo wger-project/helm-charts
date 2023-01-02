@@ -24,6 +24,12 @@ app:
     limits:
       memory: 512Mi
       cpu: 500m
+  # when nginx is enabled persistent volumes are required
+  # and therefore automatically enabled
+  nginx:
+    enabled: false
+    image: nginx:stable
+    imagePullPolicy: IfNotPresent
   django:
     secret:
       name: null # if not set .Release.Name is set
@@ -45,8 +51,6 @@ app:
       value: None
     - name: FROM_EMAIL
       value: test@test.com
-    - name: WGER_USE_GUNICORN
-      value: "False"
     - name: SYNC_EXERCISES_ON_STARTUP
       value: "False"
     - name: DOWNLOAD_EXERCISE_IMAGES_ON_STARTUP

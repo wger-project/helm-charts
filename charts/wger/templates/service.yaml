@@ -18,6 +18,10 @@ spec:
     - name: http
       protocol: TCP
       port: {{ .Values.service.port }}
+      {{- if .Values.app.nginx.enabled }}
+      targetPort: 8080
+      {{- else }}
       targetPort: 8000
+      {{- end }}
   selector:
     app.kubernetes.io/name: {{ .Release.Name }}-app
