@@ -15,8 +15,8 @@ app:
     annotations: {}
     existingClaim:
       enabled: false
-      media: null
-      static: null
+      media: null # if not set wger-media is taken
+      static: null # if not set wger-static is taken
   resources:
     requests:
       memory: 128Mi
@@ -25,7 +25,9 @@ app:
       memory: 512Mi
       cpu: 500m
   django:
-    secretKey: null # if not set a random one is generated
+    secret:
+      name: null # if not set .Release.Name is set
+      secretKey: null # if not set a random one is generated
   environment:
     - name: TIME_ZONE
       value: UTC
