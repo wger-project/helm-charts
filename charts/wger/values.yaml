@@ -60,7 +60,6 @@ app:
     - name: DJANGO_DEBUG
       value: "False"
 
-
 ingress:
   enabled: false
   url: fit.example.com
