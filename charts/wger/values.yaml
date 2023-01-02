@@ -55,11 +55,6 @@ app:
       value: "False"
     - name: ALLOW_GUEST_USERS
       value: "False"
-    - name: SECRET_KEY
-      valueFrom:
-        secretKeyRef:
-          name: django
-          key: secret-key
     - name: CSRF_TRUSTED_ORIGINS
       value: "http://127.0.0.1,http://localhost,https://localhost"
     - name: DJANGO_DEBUG
