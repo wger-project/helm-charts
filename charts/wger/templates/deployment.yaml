@@ -75,6 +75,11 @@ spec:
               value: "True"
             - name: DJANGO_MEDIA_ROOT
               value: /home/wger/media
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default .Release.Name }}
+                  key: secret-key
             {{- if .Values.ingress.enabled }}
             - name: SITE_URL
               value: {{ .Values.ingress.url }}
