@@ -115,18 +115,6 @@ spec:
             - name: wger-static
               mountPath: /var/www/html/static
               readOnly: true
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 8080
-            initialDelaySeconds: 3
-            periodSeconds: 3
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 8080
-            initialDelaySeconds: 160
-            periodSeconds: 30
           resources:
             requests:
               cpu: 10m
