@@ -45,8 +45,6 @@ app:
       value: None
     - name: FROM_EMAIL
       value: test@test.com
-    - name: WGER_USE_GUNICORN
-      value: "False"
     - name: SYNC_EXERCISES_ON_STARTUP
       value: "False"
     - name: DOWNLOAD_EXERCISE_IMAGES_ON_STARTUP
@@ -57,8 +55,6 @@ app:
       value: "False"
     - name: CSRF_TRUSTED_ORIGINS
       value: "http://127.0.0.1,http://localhost,https://localhost"
-    - name: DJANGO_DEBUG
-      value: "False"
 
 ingress:
   enabled: false
