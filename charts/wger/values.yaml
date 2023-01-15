@@ -113,18 +113,3 @@ redis:
     className:
   service:
     serverPort: 6379
-
-  # For later when redis password in wger is implemented
-  # enable .Values.redis.auth.enabled and set the following
-  # env and arg
-  #
-  ## Additional environment variables
-  # env:
-  #   - name: REDIS_PASSWORD
-  #     valueFrom:
-  #       secretKeyRef:
-  #         name: redis
-  #         key: redis-password
-  ## Arguments for the container entrypoint process
-  # args:
-  #   - "--requirepass $(REDIS_PASSWORD)"
