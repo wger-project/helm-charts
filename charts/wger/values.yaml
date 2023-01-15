@@ -15,8 +15,8 @@ app:
     annotations: {}
     existingClaim:
       enabled: false
-      media: null # if not set wger-media is taken
-      static: null # if not set wger-static is taken
+      media: null
+      static: null
   resources:
     requests:
       memory: 128Mi
@@ -32,8 +32,8 @@ app:
     imagePullPolicy: IfNotPresent
   django:
     secret:
-      name: null # if not set .Release.Name is set
-      secretKey: null # if not set a random one is generated
+      name: null
+      secretKey: null
   environment:
     - name: TIME_ZONE
       value: UTC
