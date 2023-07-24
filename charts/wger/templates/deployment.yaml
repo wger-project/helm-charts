@@ -33,7 +33,7 @@ spec:
           image: {{ .Values.app.global.image }}
           securityContext:
             # To match rundeck user UID!
-            runAsUser: 1000
+            fsGroup: 1000
           imagePullPolicy: {{ .Values.app.global.imagePullPolicy }}
           resources:
             requests:
