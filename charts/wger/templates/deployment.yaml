@@ -40,6 +40,8 @@ spec:
               memory: {{ .Values.app.resources.limits.memory }}
               cpu: {{ .Values.app.resources.limits.cpu }}
           {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
+          securityContext:
+            fsGroup: 1000
           volumeMounts:
             - name: wger-media
               mountPath: /home/wger/media
