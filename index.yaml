@@ -20,7 +20,7 @@ entries:
     type: application
     urls:
     - https://github.com/ninjatec/wger-helm-charts/releases/download/wger-0.1.4-rc.3/wger-0.1.4-rc.3.tgz
-    version: 0.1.4-rc.2
+    version: 0.1.4-rc.3
   - apiVersion: v2
     appVersion: 2.1.0
     created: "2023-07-25T13:52:28.156265553Z"
