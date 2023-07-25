@@ -1,5 +1,5 @@
 # yamllint disable rule:document-start
-{{- if .Values.app.persistence.enabled }}
+{{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
 {{- if not .Values.app.persistence.existingClaim.enabled }}
 ---
 apiVersion: v1
