@@ -24,6 +24,12 @@ app:
     limits:
       memory: 512Mi
       cpu: 500m
+  # when nginx is enabled persistent volumes are required
+  # and therefore automatically enabled
+  nginx:
+    enabled: false
+    image: nginx:stable
+    imagePullPolicy: IfNotPresent
   django:
     secret:
       name: null

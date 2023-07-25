@@ -61,6 +61,15 @@ For additional configuration of the Bitnami PostgreSQL and Redis, please check t
 | `app.global.annotations` | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
 | `app.global.replicas` | Number of webserver instances that should be running. | Integer | `1` |
 
+### Nginx
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `app.nginx.enabled` | Enable nginx as a proxy. This will enable persistent volumes, gunicorn and disable `DJANGO_DEBUG` | Boolean | `false` |
+| `app.nginx.image` | Image to use for the nginx proxy | String | `nginx:stable` |
+| `app.nginx.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
+
+
 ### Ingress
 
 | Name | Description | Type | Default Value |

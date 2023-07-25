@@ -39,7 +39,7 @@ spec:
             limits:
               memory: {{ .Values.app.resources.limits.memory }}
               cpu: {{ .Values.app.resources.limits.cpu }}
-          {{- if .Values.app.persistence.enabled }}
+          {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
           volumeMounts:
             - name: wger-media
               mountPath: /home/wger/media
@@ -49,7 +49,7 @@ spec:
               readOnly: false
           {{- end }}
           ports:
-            - containerPort: 8080
+            - containerPort: 8000
           env:
             - name: DJANGO_DB_ENGINE
               value: "django.db.backends.postgresql"
@@ -71,8 +71,13 @@ spec:
               value: django_redis.client.DefaultClient
             - name: DJANGO_CACHE_TIMEOUT
               value: "10"
+            {{- if .Values.app.nginx.enabled }}
+            - name: DJANGO_DEBUG
+              value: "False"
+            {{- else }}
             - name: DJANGO_DEBUG
               value: "True"
+            {{- end }}
             - name: DJANGO_MEDIA_ROOT
               value: /home/wger/media
             - name: SECRET_KEY
@@ -80,6 +85,10 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default .Release.Name }}
                   key: secret-key
+            {{- if .Values.app.nginx.enabled }}
+            - name: WGER_USE_GUNICORN
+              value: "True"
+            {{- end }}
             {{- if .Values.ingress.enabled }}
             - name: SITE_URL
               value: {{ .Values.ingress.url }}
@@ -89,6 +98,26 @@ spec:
             - name: {{ .name | quote }}
               value: {{ .value | quote }}
           {{- end }}
+        {{- end }}
+        {{- if .Values.app.nginx.enabled }}
+        - name: nginx
+          image: {{ .Values.app.nginx.image }}
+          imagePullPolicy: {{ .Values.app.nginx.imagePullPolicy }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/
+            - name: wger-media
+              mountPath: /var/www/html/media
+              readOnly: true
+            - name: wger-static
+              mountPath: /var/www/html/static
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
         {{- end }}
       initContainers:
         - name: init-container
@@ -100,10 +129,16 @@ spec:
               until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
       {{- if .Values.app.persistence.enabled }}
       volumes:
+        {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
         - name: wger-media
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
         - name: wger-static
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
-      {{- end }}
+        {{- end }}
+        {{- if .Values.app.nginx.enabled }}
+        - name: nginx-conf
+          configMap:
+            name: {{ .Release.Name }}-nginx-configmap
+        {{- end }}
