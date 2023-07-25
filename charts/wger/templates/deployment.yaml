@@ -28,6 +28,8 @@ spec:
       {{- end }}
     {{- end }}
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: wger
           image: {{ .Values.app.global.image }}
