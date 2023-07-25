@@ -73,41 +73,49 @@ service:
   type: ClusterIP
   port: 8000
 
-# PostgreSQL Settings. Only the bare minimum has been specified below.
-# For more options, see https://github.com/bitnami/charts/tree/master/bitnami/postgresql
-postgresql:
+# PostgreSQL Settings for groundhog2k chart. Only a minimum has been specified below.
+# For more options, see https://github.com/groundhog2k/helm-charts/tree/master/charts/postgres
+postgres:
   # Note: keep these variables present as the chart uses them for the Deployment
-  global:
-    postgresql:
-      auth:
-        database: wger
-        username: wger
-        password: wger
-      service:
-        ports:
-          postgresql: 5432
-    persistence:
-      enabled: true
-      mountPath: /bitnami/postgresql
-      storageClass: ""
-      accessModes:
-        - ReadWriteOnce
-      size: 8Gi
+  enabled: true
+  settings:
+    superuser: wger
+    superuserPassword: wger
+  userDatabase:
+    name: wger
+  service:
+    port: 5432
+  resources:
+    limits:
+      cpu: 300m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  ## Storage parameters
+  storage:
+    ##  Set persistentVolumenClaimName to reference an existing PVC
+    persistentVolumeClaimName:
+    ## Alternative set requestedSize to define a size for a dynmaically created PVC
+    requestedSize: 8Gi
+    ## the storage class name
+    className:
 
-# Redis Settings. Only the bare minimum has been specified below.
-# For more options, see https://github.com/bitnami/charts/tree/master/bitnami/redis
+# Redis Settings for groundhog2k chart. Only a minimum has been specified below.
+# For more options, see https://github.com/groundhog2k/helm-charts/tree/master/charts/redis
 redis:
   # Note: keep these variables present as the chart uses them for the Deployment
+  enabled: true
   auth:
-    password: wger
     enabled: false
-    sentinel: true
-  master:
-    containerPort: 6379
-    persistence:
-      enabled: false
-      path: /data
-      storageClass: ""
-      accessModes:
-        - ReadWriteOnce
-      size: 8Gi
+    password: wger
+  storage:
+    ##  Set persistentVolumenClaimName to reference an existing PVC
+    persistentVolumeClaimName:
+    ## Alternative set requestedSize to define a size for a dynmaically created PVC
+    ## five times (5x) the amount of memory (RAM)
+    requestedSize: 10Gi
+    ## the storage class name
+    className:
+  service:
+    serverPort: 6379
