@@ -2,6 +2,7 @@
 
 Helm charts for wger deployment on Kubernetes
 
+
 ## TL;DR
 
 If you know what you are doing, you can go ahead and run these commands to install wger. Otherwise, keep on reading!
@@ -11,14 +12,18 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.2 \
+  --version 0.1.3 \
   --namespace wger \
   --create-namespace
 ```
 
+
 ## Introduction
 
 This chart bootstraps a wger deployment on a Kubernetes cluster using the Helm package manager, alongside with a PostgreSQL for a database and Redis as a caching service.
+
+For a more productive environment you have to enable nginx as a reverse proxy. This will enable gunicorn in the wger image and will require persistent storages for at least django's media and static files.
+
 
 ## Prerequisites
 
@@ -26,6 +31,7 @@ This chart bootstraps a wger deployment on a Kubernetes cluster using the Helm p
 * Helm 3.0+
 * PV infrastructure on the cluster if persistence is needed
 * Ingress infrastructure for exposing the installation
+
 
 ## Installing the chart
 
@@ -36,7 +42,7 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.2 \
+  --version 0.1.3 \
   --namespace wger \
   --create-namespace
   --values values.yaml
@@ -47,10 +53,12 @@ If you need to override values, you can add a values.yaml file and set the new v
 They are fine if you are testing wger out, but should be changed for production.
 Please see the [parameters section](#parameters).
 
+
 ## Parameters
 
 The following table contains the configuration parameters of the chart with their default values.
-For additional configuration of the Bitnami PostgreSQL and Redis, please check the [additional information](#additional-information).
+For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, please check the [additional information](#additional-information).
+
 
 ### Globals
 
@@ -60,6 +68,7 @@ For additional configuration of the Bitnami PostgreSQL and Redis, please check t
 | `app.global.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `Always` |
 | `app.global.annotations` | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
 | `app.global.replicas` | Number of webserver instances that should be running. | Integer | `1` |
+
 
 ### Nginx
 
@@ -79,6 +88,7 @@ For additional configuration of the Bitnami PostgreSQL and Redis, please check t
 | `ingress.tls` | Whether to enable TLS. If using cert-manager, the correct annotations have to be set | Boolean | `true` |
 | `ingress.annotations` | Annotations to attach to the ingress | Dictionary | `{}` |
 
+
 ### Service
 
 | Name | Description | Type | Default Value |
@@ -86,6 +96,7 @@ For additional configuration of the Bitnami PostgreSQL and Redis, please check t
 | `service.type` | Sets the http service type, valid values are `NodePort`, `ClusterIP` or `LoadBalancer`. | String | `ClusterIP` |
 | `service.port` | Port for the service | Integer | `8000` |
 | `service.annotations` | Annotations to attach to the service | Dictionary | `{}` |
+
 
 ### Persistence
 
@@ -101,6 +112,7 @@ For additional configuration of the Bitnami PostgreSQL and Redis, please check t
 | `app.persistence.annotations` | Annotations to attach to the persistence objects (PVC and PV) | Dictionary | `{}` |
 | `app.persistence.enabled` | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
 
+
 ### Application Resources
 
 | Name | Description | Type | Default Value |
@@ -110,6 +122,7 @@ For additional configuration of the Bitnami PostgreSQL and Redis, please check t
 | `app.resources.limits.memory` |  Maximum amount of memory that the app is allowed to use. | String | `512Mi` |
 | `app.resources.limits.cpu` | Maximum amount of CPU that the app is allowed to use. | String | `500m` |
 
+
 ### Environment Variables
 
 | Name | Description | Type | Default Value |
@@ -118,9 +131,11 @@ For additional configuration of the Bitnami PostgreSQL and Redis, please check t
 
 If you are interested in the environment variables that use values from the helm charts, please see [templates/statefulset.yaml](templates/statefulset.yaml).
 
+
 ### PostgreSQL and Redis settings
 
 The application reuses the following settings directly from the groundhog2k Helm charts, so you don't have to declare them twice:
+
 
 #### PostgreSQL
 
@@ -135,6 +150,7 @@ The application reuses the following settings directly from the groundhog2k Helm
 | `postgres.storage.requestedSize` | Size for new PVC, when no existing PVC is used | Integer | `8Gi` |
 | `postgres.storage.className` | Storage class name when no existing storage used, takes the cluster default when `Nil` | String | `Nil` |
 
+
 #### Redis
 
 | Name | Description | Type | Default Value |
@@ -147,12 +163,14 @@ The application reuses the following settings directly from the groundhog2k Helm
 | `redis.storage.requestedSize` | Size for new PVC, when no existing PVC is used | String | `Nil` |
 | `redis.storage.className` | Storage class name when no existing storage used, takes the cluster default when `Nil` | String | `Nil` |
 
+
 ## Upgrading
 
 To upgrade to a new wger release, all you have to do is change the image that the deployment uses.
 Please ensure that the correct input policy has been set.
 
-For PostgreSQL and Redis upgrades, please check the Bitnami documentation, linked at the end of the README.
+For PostgreSQL and Redis upgrades, please check the Groundhog2k documentation, linked at the end of the README.
+
 
 ## Uninstalling
 
@@ -161,6 +179,7 @@ To uninstall a release called `wger`:
 ```bash
 helm delete wger
 ```
+
 
 ## Contributing
 
@@ -172,11 +191,13 @@ Generally:
 * if you have a cool idea, create a fork and send pull requests
 * assure that your code is well-formed (hint: [`helm lint`](https://helm.sh/docs/helm/helm_lint/) is a useful command). This is enforced using continuous integration.
 
+
 ## Running a highly available setup
 
 The deployment can be scaled using `app.global.replicas` to allow for more web server replicas. Persistence should be enabled as well to ensure that the different webservers have access to the same static and media shares. 
 
 In a production deployment, it is assumed that these files will be handled by a CDN/SE in front of your application so persistence remains optional. Postgres persistence should be enabled as well for all scenarios except local dev.
+
 
 ## Developing locally
 
@@ -232,6 +253,7 @@ $ minikube stop
 $ minikube delete
 ```
 
+
 ## Contact
 
 Feel free to contact us if you found this useful or if there was something that didn't behave as you expected. We can't fix what we don't know about, so please report liberally. If you're not sure if something is a bug or not, feel free to file a bug anyway.
@@ -239,6 +261,7 @@ Feel free to contact us if you found this useful or if there was something that 
 * discord: https://discord.gg/rPWFv6W
 * issue tracker: https://github.com/wger-project/helm-charts/issues
 * twitter: https://twitter.com/wger_project
+
 
 ## Additional information
 
