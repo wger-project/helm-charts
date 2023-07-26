@@ -172,6 +172,52 @@ Please ensure that the correct input policy has been set.
 For PostgreSQL and Redis upgrades, please check the Groundhog2k documentation, linked at the end of the README.
 
 
+### Postgres Upgrade
+
+It is sadly not possible to automatically upgrade between postgres versions, you need to perform the upgrade manually. Since the amount of data the app generates is small a simple dump and restore is the simplest way to do this.
+
+If you pulled new changes from this repo and got the error message "The data directory was initialized by PostgreSQL version 12, which is not compatible with this version 15." this is for you.
+
+See also <https://github.com/docker-library/postgres/issues/37>
+
+The following requires a persistent storage for the postgresql database.
+
+**Before doing the upgrade**, go inside the container:
+
+```bash
+export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=postgres" -o jsonpath="{.items[0].metadata.name}")
+kubectl -n wger exec -ti $POD -c postgres -- bash
+```
+
+Dump the database and move away the current db:
+
+```bash
+# backup the database
+pg_dumpall --clean --username wger > /var/lib/postgresql/data/backup.sql
+# move the old database -> can be removed after the upgrade was successful
+mv /var/lib/postgresql/data/pg /var/lib/postgresql/data/pg-$(date +%Y-%m-%d)
+```
+
+Upgrade (posgres), go inside the new container and import the database dump with:
+
+```bash
+cat /var/lib/postgresql/data/backup.sql | psql --username wger --dbname wger
+```
+
+Also reset the database password to the one you used, the default is `wger`:
+
+```bash
+psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger'"
+```
+
+Clean up:
+
+```bash
+rm /var/lib/postgresql/data/backup.sql
+rm -r /var/lib/postgresql/data/pg-$(date +%Y-%m-%d)
+```
+
+
 ## Uninstalling
 
 To uninstall a release called `wger`:
