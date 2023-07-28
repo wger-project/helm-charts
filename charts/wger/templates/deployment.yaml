@@ -28,7 +28,7 @@ spec:
       {{- end }}
     {{- end }}
     spec:
-      {{- with .Values.app.securityContext }}
+      {{- with .Values.app.global.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}

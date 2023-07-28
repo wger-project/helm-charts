@@ -11,8 +11,8 @@ app:
       PullPolicy: IfNotPresent
     annotations: {}
     replicas: 1
-  securityContext:
-    fsGroup: 1000
+    securityContext:
+      fsGroup: 1000
   persistence:
     enabled: false
     storageClass: null

@@ -70,6 +70,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.global.image.PullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
 | `app.global.annotations` | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
 | `app.global.replicas` | Number of webserver instances that should be running. | Integer | `1` |
+| `app.global.securityContext` | Pod security context | Object | see values.yaml	|
 
 
 ### Nginx
