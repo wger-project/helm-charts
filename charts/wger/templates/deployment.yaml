@@ -28,8 +28,10 @@ spec:
       {{- end }}
     {{- end }}
     spec:
+      {{- with .Values.app.securityContext }}
       securityContext:
-        fsGroup: 1000
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: wger
           image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
