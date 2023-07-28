@@ -64,8 +64,10 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `app.global.image` | Image to use for the wger deployment | String | `wger/server:latest` |
-| `app.global.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `Always` |
+| `app.global.image.registry` | Image to use for the wger deployment | String | `docker.io` |
+| `app.global.image.repository` | Image to use for the wger deployment | String | `wger/server` |
+| `app.global.image.tag` | Takes the `Chart.yaml` `appversion` when empty. wger is developed as a rolling release | String | `latest` |
+| `app.global.image.PullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
 | `app.global.annotations` | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
 | `app.global.replicas` | Number of webserver instances that should be running. | Integer | `1` |
 
@@ -182,18 +184,57 @@ See also <https://github.com/docker-library/postgres/issues/37>
 
 The following requires a persistent storage for the postgresql database.
 
-**Before doing the upgrade**, go inside the container:
+**Before doing the upgrade**, go inside the container and dump the database:
 
 ```bash
 export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=postgres" -o jsonpath="{.items[0].metadata.name}")
 kubectl -n wger exec -ti $POD -c postgres -- bash
+
+pg_dumpall --clean --username wger -f /var/lib/postgresql/data/dump.sql
 ```
 
-Dump the database and move away the current db:
+If you however missed that, you need to know which postgres version you where running before, stop the current postgres.
+
+Create a job dumping the database `job.yaml`:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dbdump
+spec:
+  template:
+    spec:
+      containers:
+      - name: dbdump
+        image: postgres:14
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/bash", "-c", "until `pg_dumpall --clean --username wger -f /var/lib/postgresql/data/dump.sql && runuser -u postgres -- pg_ctl stop`; do sleep 2; done"]
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: wger-db
+        env:
+          - name: PGDATA
+            value: "/var/lib/postgresql/data/pg"
+          - name: POSTGRES_HOST_AUTH_METHOD
+            value: trust
+      volumes:
+        - name: wger-db
+          persistentVolumeClaim:
+            claimName: wger-db
+      restartPolicy: Never
+  backoffLimit: 4
+```
 
 ```bash
-# backup the database
-pg_dumpall --clean --username wger > /var/lib/postgresql/data/backup.sql
+kubectl -n wger apply -f job.yaml
+```
+
+Now move away the current db in your storage, so that the postges image will create a new one:
+
+```bash
 # move the old database -> can be removed after the upgrade was successful
 mv /var/lib/postgresql/data/pg /var/lib/postgresql/data/pg-$(date +%Y-%m-%d)
 ```
@@ -201,20 +242,13 @@ mv /var/lib/postgresql/data/pg /var/lib/postgresql/data/pg-$(date +%Y-%m-%d)
 Upgrade (posgres), go inside the new container and import the database dump with:
 
 ```bash
-cat /var/lib/postgresql/data/backup.sql | psql --username wger --dbname wger
+cat /var/lib/postgresql/data/dump.sql | psql --username wger --dbname wger
 ```
 
 Also reset the database password to the one you used, the default is `wger`:
 
 ```bash
 psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger'"
-```
-
-Clean up:
-
-```bash
-rm /var/lib/postgresql/data/backup.sql
-rm -r /var/lib/postgresql/data/pg-$(date +%Y-%m-%d)
 ```
 
 

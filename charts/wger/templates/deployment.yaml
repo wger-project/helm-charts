@@ -32,8 +32,8 @@ spec:
         fsGroup: 1000
       containers:
         - name: wger
-          image: {{ .Values.app.global.image }}
-          imagePullPolicy: {{ .Values.app.global.imagePullPolicy }}
+          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           resources:
             requests:
               memory: {{ .Values.app.resources.requests.memory }}
