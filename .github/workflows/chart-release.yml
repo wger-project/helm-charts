@@ -11,7 +11,6 @@ on:
   push:
     branches:
       - master
-      - upgrade
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
