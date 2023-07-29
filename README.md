@@ -194,9 +194,16 @@ kubectl -n wger exec -ti $POD -c postgres -- bash
 pg_dumpall --clean --username wger -f /var/lib/postgresql/data/dump.sql
 ```
 
-If you however missed that, you need to know which postgres version you where running before, stop the current postgres.
+If you however missed that, you need to know which postgres version you where running before, stop the current postgres and wger app.
 
-Create a job dumping the database `job.yaml`:
+```bash
+# stop the current wger deployment
+kubectl -n wger scale --replicas=0 deploy wger-app
+# stop the postgres sts
+kubectl -n wger scale --replicas=0 sts wger-postgres
+```
+
+Create a job dumping the database `job-dump.yaml`, fill in the postgres version you where running:
 
 ```yaml
 apiVersion: batch/v1
@@ -230,17 +237,34 @@ spec:
 ```
 
 ```bash
-kubectl -n wger apply -f job.yaml
+kubectl -n wger apply -f job-dump.yaml
 ```
 
-Now move away the current db in your storage, so that the postges image will create a new one:
+Now move away the current db in your storage, so that the new postges image will create a new one:
 
 ```bash
 # move the old database -> can be removed after the upgrade was successful
 mv /var/lib/postgresql/data/pg /var/lib/postgresql/data/pg-$(date +%Y-%m-%d)
 ```
 
-Upgrade (posgres), go inside the new container and import the database dump with:
+Upgrade wger chart, but disable the wger django app, so that the database will not be created, for this you can temporary set the app replicas to `0` in your `values.yaml`:
+
+```yaml
+app:
+  global:
+    replicas: 0
+```
+
+```bash
+helm upgrade \
+  --install wger github-wger/wger \
+  --version 0.1.4 \
+  --namespace wger \
+  --create-namespace
+  --values values.yaml
+```
+
+Now you should have running the new postgres version. Go inside the new container and import the database dump with:
 
 ```bash
 cat /var/lib/postgresql/data/dump.sql | psql --username wger --dbname wger
@@ -250,6 +274,12 @@ Also reset the database password to the one you used, the default is `wger`:
 
 ```bash
 psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger'"
+```
+
+Start the wger app, don't forget to set back the replicas in your values.yaml as well:
+
+```bash
+kubectl -n wger scale --replicas=1 deploy wger-app
 ```
 
 
