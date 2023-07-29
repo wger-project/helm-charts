@@ -6,11 +6,9 @@ on:
   push:
     branches:
       - master
-      - upgrade
   pull_request:
     branches:
       - master
-      - upgrade
 
 jobs:
   lint-test:
