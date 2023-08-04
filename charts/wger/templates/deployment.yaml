@@ -55,6 +55,7 @@ spec:
           ports:
             - containerPort: 8000
           env:
+            # django db
             - name: DJANGO_DB_ENGINE
               value: "django.db.backends.postgresql"
             - name: DJANGO_DB_USER
@@ -67,6 +68,7 @@ spec:
               value: "{{ .Release.Name }}-postgres"
             - name: DJANGO_DB_PORT
               value: {{ .Values.postgres.service.port | quote }}
+            # django cache
             - name: DJANGO_CACHE_BACKEND
               value: "django_redis.cache.RedisCache"
             - name: DJANGO_CACHE_LOCATION
@@ -74,7 +76,11 @@ spec:
             - name: DJANGO_CACHE_CLIENT_CLASS
               value: django_redis.client.DefaultClient
             - name: DJANGO_CACHE_TIMEOUT
-              value: "10"
+              value: {{ .Values.app.django.secret.name | default "1296000" }}
+            # django email
+            - name: EMAIL_BACKEND
+              value: "django.core.mail.backends.console.EmailBackend"
+            # django general
             {{- if .Values.app.nginx.enabled }}
             - name: DJANGO_DEBUG
               value: "False"
@@ -87,16 +93,43 @@ spec:
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.app.django.secret.name | default .Release.Name }}
-                  key: secret-key
-            {{- if .Values.app.nginx.enabled }}
-            - name: WGER_USE_GUNICORN
-              value: "True"
-            {{- end }}
+                  name: {{ .Values.app.django.secret.name | default "django" }}
+                  key: {{ .Values.app.django.secret.key | default "secret-key" }}
             {{- if .Values.ingress.enabled }}
             - name: SITE_URL
               value: {{ .Values.ingress.url }}
             {{- end }}
+            # axes
+            {{- if .Values.app.axes.enabled }}
+            - name: AXES_ENABLED
+              value: "True"
+            {{- else }}
+            - name: AXES_ENABLED
+              value: "False"
+            {{- end }}
+            - name: AXES_FAILURE_LIMIT
+              value: {{ .Values.app.axes.failureLimit | default "10" }}
+            - name: AXES_COOLOFF_TIME
+              value: {{ .Values.app.axes.cooloffTime | default "30" }}
+            - name: AXES_HANDLER
+              value: "axes.handlers.cache.AxesCacheHandler"
+            # jwt auth
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" }}
+                  key: {{ .Values.app.jwt.secret.key | default "signing-key" }}
+            - name: ACCESS_TOKEN_LIFETIME
+              value: {{ .Values.app.jwt.accessTokenLifetime | default "10" }}
+            - name: REFRESH_TOKEN_LIFETIME
+              value: {{ .Values.app.jwt.refreshTokenLifetime | default "24" }}
+            # other
+            {{- if .Values.app.nginx.enabled }}
+            - name: WGER_USE_GUNICORN
+              value: "True"
+            {{- end }}
+            - name: EXERCISE_CACHE_TTL
+              value: "18000"
         {{- with .Values.app.environment }}
           {{- range  . }}
             - name: {{ .name | quote }}

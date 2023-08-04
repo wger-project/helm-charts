@@ -40,14 +40,33 @@ app:
   django:
     secret:
       name: null
-      secretKey: null
+      key: null
+    cache:
+      # in seconds - 60*60*24*15, 15 Days
+      timeout: 1296000
+  #
+  # JWT auth
+  jwt:
+    secret:
+      name: null
+      key: null
+    # The lifetime duration of the access token, in minutes
+    accessTokenLifetime: 10
+    # The lifetime duration of the refresh token, in hours
+    refreshTokenLifetime: 24
+  #
+  # Brute force login attacks
+  # https://django-axes.readthedocs.io/en/latest/index.html
+  axes:
+    enabled: true
+    failureLimit: 10
+    # in minutes
+    cooloffTime: 30
   environment:
     - name: TIME_ZONE
       value: UTC
     - name: ENABLE_EMAIL
       value: "False"
-    - name: EMAIL_BACKEND
-      value: "django.core.mail.backends.console.EmailBackend"
     - name: EMAIL_HOST
       value: None
     - name: EMAIL_PORT
@@ -58,16 +77,29 @@ app:
       value: None
     - name: FROM_EMAIL
       value: test@test.com
+    # Wger instance from which to sync exercises, images, etc.
+    - name: WGER_INSTANCE
+      value: "https://wger.de"
     - name: SYNC_EXERCISES_ON_STARTUP
       value: "False"
     - name: DOWNLOAD_EXERCISE_IMAGES_ON_STARTUP
       value: "False"
+    - name: ALLOW_UPLOAD_VIDEOS
+      value: "True"
+    # Users won't be able to contribute to exercises if their account age is
+    # lower than this amount in days.
+    - name: MIN_ACCOUNT_AGE_TO_TRUST
+      value: "21"
     - name: ALLOW_REGISTRATION
       value: "False"
     - name: ALLOW_GUEST_USERS
       value: "False"
+    - name: DJANGO_PERFORM_MIGRATIONS
+      value: "True"
+    - name: GUNICORN_CMD_ARGS
+      value: "--timeout 240"
     - name: CSRF_TRUSTED_ORIGINS
-      value: "http://127.0.0.1,http://localhost,https://localhost"
+      value: "http://127.0.0.1,https://127.0.0.1,http://localhost,https://localhost"
 
 ingress:
   enabled: false

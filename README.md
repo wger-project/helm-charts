@@ -71,8 +71,32 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.global.image.PullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `Always` |
 | `app.global.annotations` | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
 | `app.global.replicas` | Number of webserver instances that should be running. | Integer | `1` |
-| `app.global.securityContext` | Pod security context | Object | see values.yaml	|
+| `app.global.securityContext` | Pod security context | Object | see [values.yaml](charts/wger/values.yaml)	|
 
+## Django
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `app.django.secret.name` | Name of the secret | String | `django` |
+| `app.django.secret.key` | Key for the `SECRET_KEY` | String | `randAlphaNum 50` |
+| `app.django.cache.timeout` | Cache timeout in seconds | String | `1296000` |
+
+## Jwt
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `app.jwt.secret.name` | Name of the secret | String | `jwt` |
+| `app.jwt.secret.key` | Key for the `SIGNING_KEY` | String | `randAlphaNum 50` |
+| `app.jwt.accessTokenLifetime` | Duration of the access token, in minutes | String | `10` |
+| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours | String | `24` |
+
+## Axes
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `app.axes.enabled` | Enable [axes](https://django-axes.readthedocs.io/en/latest/index.html) Bruteforce protection | Boolean | `true` |
+| `app.axes.failureLimit` | Limit of failed auth | String | `10` |
+| `app.axes.cooloffTime` | in Minutes | String | `30` |
 
 ### Nginx
 
