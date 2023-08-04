@@ -8,7 +8,7 @@ app:
       # when tag left emtpy the Chart appversion will be taken
       # wger is developed as a rolling release
       tag: latest
-      PullPolicy: IfNotPresent
+      PullPolicy: Always
     annotations: {}
     replicas: 1
     securityContext:
