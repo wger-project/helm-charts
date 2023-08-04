@@ -178,6 +178,20 @@ The application reuses the following settings directly from the groundhog2k Helm
 | `postgres.storage.requestedSize` | Size for new PVC, when no existing PVC is used | Integer | `8Gi` |
 | `postgres.storage.className` | Storage class name when no existing storage used, takes the cluster default when `Nil` | String | `Nil` |
 
+#### Celery
+
+celery requires persistent volumes. The user for the flower webinterface is `wger`.
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `app.celery.enabled` | Enable celery for sync | Boolean | `True` |
+| `app.celery.syncExercises` | sync exercises | Boolean | `True` |
+| `app.celery.syncImages` | sync exercise images | Boolean | `True` |
+| `app.celery.syncVideos` | sync exercise videos | Boolean | `True` |
+| `app.celery.ingredientsFrom` | source for ingredients, possible values `WGER`,`OFF` | String | `WGER` |
+| `app.celery.flower.enabled` | enable flower webinterface for celery | Boolean | `False` |
+| `app.celery.flower.secret.name` | Name of the secret | String | `flower` |
+| `app.celery.flower.secret.password` | Password for the webinterface | String | `randAlphaNum 50` |
 
 #### Redis
 

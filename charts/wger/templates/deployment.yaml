@@ -33,9 +33,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
+        # wger app container
         - name: wger
-          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          {{- include "wger.container" . | indent 10 }}
+          ports:
+            - containerPort: 8000
           resources:
             requests:
               memory: {{ .Values.app.resources.requests.memory }}
@@ -51,91 +53,41 @@ spec:
             - name: wger-static
               mountPath: /home/wger/static
               readOnly: false
+            {{- if .Values.app.celery.enabled }}
+            - name: wger-celery-beat
+              mountPath: /home/wger/beat
+              readOnly: false
+            {{- end }}
           {{- end }}
+        # celery
+        {{- if .Values.app.celery.enabled }}
+        {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
+        # celery worker
+        - name: celery-worker
+          {{- include "wger.container" . | indent 10 }}
+          command: ["/start-worker"]
+          volumeMounts:
+            - name: wger-media
+              mountPath: /home/wger/media
+              readOnly: false
+        # celery beat
+        - name: celery-beat
+          {{- include "wger.container" . | indent 10 }}
+          command: ["/start-beat"]
+          - name: wger-celery-beat
+            mountPath: /home/wger/beat
+            readOnly: false
+        # celery flower
+          {{- if .Values.app.celery.flower.enabled }}
+        - name: celery-flower
+          {{- include "wger.container" . | indent 10 }}
+          command: ["/start-flower"]
           ports:
-            - containerPort: 8000
-          env:
-            # django db
-            - name: DJANGO_DB_ENGINE
-              value: "django.db.backends.postgresql"
-            - name: DJANGO_DB_USER
-              value: {{ .Values.postgres.settings.superuser | quote }}
-            - name: DJANGO_DB_PASSWORD
-              value: {{ .Values.postgres.settings.superuserPassword | quote }}
-            - name: DJANGO_DB_DATABASE
-              value: {{ .Values.postgres.userDatabase.name | quote }}
-            - name: DJANGO_DB_HOST
-              value: "{{ .Release.Name }}-postgres"
-            - name: DJANGO_DB_PORT
-              value: {{ .Values.postgres.service.port | quote }}
-            # django cache
-            - name: DJANGO_CACHE_BACKEND
-              value: "django_redis.cache.RedisCache"
-            - name: DJANGO_CACHE_LOCATION
-              value: "redis://{{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }}/1"
-            - name: DJANGO_CACHE_CLIENT_CLASS
-              value: django_redis.client.DefaultClient
-            - name: DJANGO_CACHE_TIMEOUT
-              value: {{ .Values.app.django.secret.name | default "1296000" | quote }}
-            # django email
-            - name: EMAIL_BACKEND
-              value: "django.core.mail.backends.console.EmailBackend"
-            # django general
-            {{- if .Values.app.nginx.enabled }}
-            - name: DJANGO_DEBUG
-              value: "False"
-            {{- else }}
-            - name: DJANGO_DEBUG
-              value: "True"
-            {{- end }}
-            - name: DJANGO_MEDIA_ROOT
-              value: /home/wger/media
-            - name: SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
-                  key: {{ .Values.app.django.secret.key | default "secret-key" | quote }}
-            {{- if .Values.ingress.enabled }}
-            - name: SITE_URL
-              value: {{ .Values.ingress.url }}
-            {{- end }}
-            # axes
-            {{- if .Values.app.axes.enabled }}
-            - name: AXES_ENABLED
-              value: "True"
-            {{- else }}
-            - name: AXES_ENABLED
-              value: "False"
-            {{- end }}
-            - name: AXES_FAILURE_LIMIT
-              value: {{ .Values.app.axes.failureLimit | default "10" | quote }}
-            - name: AXES_COOLOFF_TIME
-              value: {{ .Values.app.axes.cooloffTime | default "30" | quote }}
-            - name: AXES_HANDLER
-              value: "axes.handlers.cache.AxesCacheHandler"
-            # jwt auth
-            - name: SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: {{ .Values.app.jwt.secret.key | default "signing-key" | quote }}
-            - name: ACCESS_TOKEN_LIFETIME
-              value: {{ .Values.app.jwt.accessTokenLifetime | default "10" | quote }}
-            - name: REFRESH_TOKEN_LIFETIME
-              value: {{ .Values.app.jwt.refreshTokenLifetime | default "24" | quote }}
-            # other
-            {{- if .Values.app.nginx.enabled }}
-            - name: WGER_USE_GUNICORN
-              value: "True"
-            {{- end }}
-            - name: EXERCISE_CACHE_TTL
-              value: "18000"
-        {{- with .Values.app.environment }}
-          {{- range  . }}
-            - name: {{ .name | quote }}
-              value: {{ .value | quote }}
+            - containerPort: 5555
           {{- end }}
         {{- end }}
+        {{- end }}
+        # nginx container
         {{- if .Values.app.nginx.enabled }}
         - name: nginx
           image: {{ .Values.app.nginx.image }}
@@ -173,6 +125,11 @@ spec:
         - name: wger-static
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
+        {{- if .Values.app.celery.enabled }}
+        - name: wger-celery-beat
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
+        {{- end }}
         {{- end }}
         {{- if .Values.app.nginx.enabled }}
         - name: nginx-conf
