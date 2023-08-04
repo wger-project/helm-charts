@@ -42,7 +42,6 @@ jobs:
 
       - name: Add dependent chart repositories
         run: |
-          helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo add groundhog2k https://groundhog2k.github.io/helm-charts
 
       - name: Run chart-releaser

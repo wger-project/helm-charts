@@ -2,10 +2,17 @@
 # App settings
 app:
   global:
-    image: wger/server:latest
-    imagePullPolicy: Always
+    image:
+      registry: docker.io
+      repository: wger/server
+      # when tag left emtpy the Chart appversion will be taken
+      # wger is developed as a rolling release
+      tag: latest
+      PullPolicy: Always
     annotations: {}
     replicas: 1
+    securityContext:
+      fsGroup: 1000
   persistence:
     enabled: false
     storageClass: null

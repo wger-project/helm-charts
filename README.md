@@ -12,10 +12,12 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.3 \
-  --namespace wger \
+  --version 0.1.4 \
+  -n wger \
   --create-namespace
 ```
+
+This will install the chart with the defaults, stated in [values.yaml](https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml). 
 
 
 ## Introduction
@@ -27,7 +29,7 @@ For a more productive environment you have to enable nginx as a reverse proxy. T
 
 ## Prerequisites
 
-* Kubernetes 1.12+
+* Kubernetes 1.15+
 * Helm 3.0+
 * PV infrastructure on the cluster if persistence is needed
 * Ingress infrastructure for exposing the installation
@@ -42,15 +44,14 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.3 \
-  --namespace wger \
+  --version 0.1.4 \
+  -n wger \
   --create-namespace
-  --values values.yaml
+  -f values.yaml
 ```
 
-This will install the chart with the defaults, stated in `values.yaml`. 
-If you need to override values, you can add a values.yaml file and set the new values there.
-They are fine if you are testing wger out, but should be changed for production.
+First you may want to make a copy of [values.yaml](https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml) and modify it for your needs.
+
 Please see the [parameters section](#parameters).
 
 
@@ -64,10 +65,13 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `app.global.image` | Image to use for the wger deployment | String | `wger/server:latest` |
-| `app.global.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `Always` |
+| `app.global.image.registry` | Image to use for the wger deployment | String | `docker.io` |
+| `app.global.image.repository` | Image to use for the wger deployment | String | `wger/server` |
+| `app.global.image.tag` | Takes the `Chart.yaml` `appversion` when empty. wger is developed as a rolling release | String | `latest` |
+| `app.global.image.PullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `Always` |
 | `app.global.annotations` | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
 | `app.global.replicas` | Number of webserver instances that should be running. | Integer | `1` |
+| `app.global.securityContext` | Pod security context | Object | see values.yaml	|
 
 
 ### Nginx
@@ -127,9 +131,9 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `app.environment` | Array of objects, representing additional environment variables to set for the deployment. | Array | `[{name: TIME_ZONE, value: UTC}, {name: ENABLE_EMAIL, value: "False"}]` |
+| `app.environment` | Array of objects, representing additional environment variables to set for the deployment. | Array | see [deployment.yaml](charts/wger/templates/deployment.yaml) and [values.yaml](charts/wger/values.yaml) |
 
-If you are interested in the environment variables that use values from the helm charts, please see [templates/statefulset.yaml](templates/statefulset.yaml).
+There are more possible ENV variables, than the ones used in the deployment. Please check [prod.env](https://github.com/wger-project/docker/blob/master/config/prod.env).
 
 
 ### PostgreSQL and Redis settings
@@ -166,18 +170,135 @@ The application reuses the following settings directly from the groundhog2k Helm
 
 ## Upgrading
 
-To upgrade to a new wger release, all you have to do is change the image that the deployment uses.
-Please ensure that the correct input policy has been set.
+wger is developped in a rolling release manner, so the docker image of the release is `:latest`, the hightest version tag `:X.x-dev` is the same as the `:latest` image. Older version tags are not changed or "bugfixed".
+
+This means we cannot upgrade with changing the image tag.
+
+As a consequence the default `values.yaml` has set `imagePullPolicy` to `Always`, this means on every restart of the pod the image will be downloaded.
+
+To upgrade you can restart the deployment (k8s v1.15):
+
+```bash
+kubectl -n wger rollout restart deploy wger-app
+```
 
 For PostgreSQL and Redis upgrades, please check the Groundhog2k documentation, linked at the end of the README.
 
 
-## Uninstalling
+### Postgres Upgrade Notes
 
-To uninstall a release called `wger`:
+It is sadly not possible to automatically upgrade between postgres versions, you need to perform the upgrade manually. Since the amount of data the app generates is small a simple dump and restore is the simplest way to do this.
+
+If you pulled new changes from this repo and got the error message "The data directory was initialized by PostgreSQL version 12, which is not compatible with this version 15." this is for you.
+
+See also <https://github.com/docker-library/postgres/issues/37>
+
+The following requires a persistent storage for the postgresql database.
+
+**Before doing the upgrade**, go inside the container and dump the database:
 
 ```bash
-helm delete wger
+export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=postgres" -o jsonpath="{.items[0].metadata.name}")
+kubectl -n wger exec -ti $POD -c postgres -- bash
+
+pg_dumpall --clean --username wger -f /var/lib/postgresql/data/dump.sql
+```
+
+If you however missed that, you need to know which postgres version you where running before, stop the current postgres and wger app.
+
+```bash
+# stop the current wger deployment
+kubectl -n wger scale --replicas=0 deploy wger-app
+# stop the postgres sts
+kubectl -n wger scale --replicas=0 sts wger-postgres
+```
+
+Create a job dumping the database `job-dump.yaml`, fill in the postgres version you where running:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dbdump
+spec:
+  template:
+    spec:
+      containers:
+      - name: dbdump
+        image: postgres:14
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/bash", "-c", "until `pg_dumpall --clean --username wger -f /var/lib/postgresql/data/dump.sql && runuser -u postgres -- pg_ctl stop`; do sleep 2; done"]
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: wger-db
+        env:
+          - name: PGDATA
+            value: "/var/lib/postgresql/data/pg"
+          - name: POSTGRES_HOST_AUTH_METHOD
+            value: trust
+      volumes:
+        - name: wger-db
+          persistentVolumeClaim:
+            claimName: wger-db
+      restartPolicy: Never
+  backoffLimit: 4
+```
+
+```bash
+kubectl -n wger apply -f job-dump.yaml
+```
+
+Now move away the current db in your storage, so that the new postges image will create a new one:
+
+```bash
+# move the old database -> can be removed after the upgrade was successful
+mv /var/lib/postgresql/data/pg /var/lib/postgresql/data/pg-$(date +%Y-%m-%d)
+```
+
+Upgrade wger chart, but disable the wger django app, so that the database will not be created, for this you can temporary set the app replicas to `0` in your `values.yaml`:
+
+```yaml
+app:
+  global:
+    replicas: 0
+```
+
+```bash
+helm upgrade \
+  --install wger github-wger/wger \
+  --version 0.1.4 \
+  -n wger \
+  --create-namespace
+  -f values.yaml
+```
+
+Now you should have running the new postgres version. Go inside the new container and import the database dump with:
+
+```bash
+cat /var/lib/postgresql/data/dump.sql | psql --username wger --dbname wger
+```
+
+Also reset the database password to the one you used, the default is `wger`:
+
+```bash
+psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger'"
+```
+
+Start the wger app, don't forget to set back the replicas in your values.yaml as well:
+
+```bash
+kubectl -n wger scale --replicas=1 deploy wger-app
+```
+
+
+## Uninstalling
+
+To uninstall remove the helm release we called `wger` during installation:
+
+```bash
+helm -n wger delete wger
 ```
 
 
