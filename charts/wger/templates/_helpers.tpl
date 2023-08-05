@@ -22,7 +22,7 @@ env:
   - name: DJANGO_CACHE_LOCATION
     value: "redis://{{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }}/1"
   - name: DJANGO_CACHE_CLIENT_CLASS
-    value: django_redis.client.DefaultClient
+    value: "django_redis.client.DefaultClient"
   - name: DJANGO_CACHE_TIMEOUT
     value: {{ .Values.app.django.secret.name | default "1296000" | quote }}
   # django email
@@ -37,7 +37,7 @@ env:
     value: "True"
   {{- end }}
   - name: DJANGO_MEDIA_ROOT
-    value: /home/wger/media
+    value: "/home/wger/media"
   - name: SECRET_KEY
     valueFrom:
       secretKeyRef:
@@ -45,7 +45,7 @@ env:
         key: "secret-key"
   {{- if .Values.ingress.enabled }}
   - name: SITE_URL
-    value: {{ .Values.ingress.url }}
+    value: {{ .Values.ingress.url | quote }}
   {{- end }}
   # axes
   {{- if .Values.app.axes.enabled }}

@@ -74,9 +74,10 @@ spec:
         - name: celery-beat
           {{- include "wger.container" . | indent 10 }}
           command: ["/start-beat"]
-          - name: wger-celery-beat
-            mountPath: /home/wger/beat
-            readOnly: false
+          volumeMounts:
+            - name: wger-celery-beat
+              mountPath: /home/wger/beat
+              readOnly: false
         # celery flower
           {{- if .Values.app.celery.flower.enabled }}
         - name: celery-flower
