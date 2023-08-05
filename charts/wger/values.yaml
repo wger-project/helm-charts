@@ -34,40 +34,6 @@ app:
     limits:
       memory: 512Mi
       cpu: 500m
-  environment:
-    - name: TIME_ZONE
-      value: UTC
-    - name: ENABLE_EMAIL
-      value: "False"
-    - name: EMAIL_HOST
-      value: None
-    - name: EMAIL_PORT
-      value: 587
-    - name: EMAIL_HOST_USER
-      value: None
-    - name: EMAIL_HOST_PASSWORD
-      value: None
-    - name: FROM_EMAIL
-      value: test@test.com
-    # Wger instance from which to sync exercises, images, etc.
-    - name: WGER_INSTANCE
-      value: "https://wger.de"
-    - name: ALLOW_UPLOAD_VIDEOS
-      value: "True"
-    # Users won't be able to contribute to exercises if their account age is
-    # lower than this amount in days.
-    - name: MIN_ACCOUNT_AGE_TO_TRUST
-      value: "21"
-    - name: ALLOW_REGISTRATION
-      value: "False"
-    - name: ALLOW_GUEST_USERS
-      value: "False"
-    - name: DJANGO_PERFORM_MIGRATIONS
-      value: "True"
-    - name: GUNICORN_CMD_ARGS
-      value: "--timeout 240"
-    - name: CSRF_TRUSTED_ORIGINS
-      value: "http://127.0.0.1,https://127.0.0.1,http://localhost,https://localhost"
   # when nginx is enabled persistent volumes are required
   # and therefore automatically enabled
   nginx:

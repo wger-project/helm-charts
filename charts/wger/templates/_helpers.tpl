@@ -3,7 +3,27 @@
 image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
 imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
 env:
+  # general
+  - name: TIME_ZONE
+    value: "UTC"
+  # email settings
+  - name: ENABLE_EMAIL
+    value: "False"
+  - name: EMAIL_HOST
+    value: None
+  - name: EMAIL_PORT
+    value: "587"
+  - name: EMAIL_HOST_USER
+    value: None
+  - name: EMAIL_HOST_PASSWORD
+    value: None
+  - name: FROM_EMAIL
+    value: "test@test.com"
+  - name: EMAIL_BACKEND
+    value: "django.core.mail.backends.console.EmailBackend"
   # django db
+  - name: DJANGO_PERFORM_MIGRATIONS
+    value: "True"
   - name: DJANGO_DB_ENGINE
     value: "django.db.backends.postgresql"
   - name: DJANGO_DB_USER
@@ -25,10 +45,9 @@ env:
     value: "django_redis.client.DefaultClient"
   - name: DJANGO_CACHE_TIMEOUT
     value: {{ .Values.app.django.secret.name | default "1296000" | quote }}
-  # django email
-  - name: EMAIL_BACKEND
-    value: "django.core.mail.backends.console.EmailBackend"
   # django general
+  - name: CSRF_TRUSTED_ORIGINS
+    value: "http://127.0.0.1,https://127.0.0.1,http://localhost,https://localhost"
   {{- if .Values.app.nginx.enabled }}
   - name: DJANGO_DEBUG
     value: "False"
@@ -75,11 +94,26 @@ env:
   {{- if .Values.app.nginx.enabled }}
   - name: WGER_USE_GUNICORN
     value: "True"
+  - name: GUNICORN_CMD_ARGS
+    value: "--timeout 240"
   {{- end }}
   - name: EXERCISE_CACHE_TTL
     value: "18000"
+  # Users won't be able to contribute to exercises if their account age is
+  # lower than this amount in days.
+  - name: MIN_ACCOUNT_AGE_TO_TRUST
+    value: "21"
+  - name: ALLOW_REGISTRATION
+    value: "False"
+  - name: ALLOW_GUEST_USERS
+    value: "False"
   # Exercise synchronization
   # can be done manually / on startup / with celery as timebased job
+  # Wger instance from which to sync exercises, images, etc.
+  - name: WGER_INSTANCE
+    value: "https://wger.de"
+  - name: ALLOW_UPLOAD_VIDEOS
+    value: "True"
   {{- if .Values.app.celery.enabled }}
   - name: SYNC_EXERCISES_ON_STARTUP
     value: "False"
