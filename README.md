@@ -155,7 +155,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `app.environment` | Array of objects, representing additional environment variables to set for the deployment. | Array | see [deployment.yaml](charts/wger/templates/deployment.yaml) and [values.yaml](charts/wger/values.yaml) |
+| `app.environment` | Array of objects, representing additional environment variables to set for the deployment. | Array | see [_helpers.yaml](charts/wger/templates/_helpers.yaml) and [values.yaml](charts/wger/values.yaml) |
 
 There are more possible ENV variables, than the ones used in the deployment. Please check [prod.env](https://github.com/wger-project/docker/blob/master/config/prod.env).
 
@@ -180,7 +180,7 @@ The application reuses the following settings directly from the groundhog2k Helm
 
 #### Celery
 
-celery requires persistent volumes. The user for the flower webinterface is `wger`.
+Celery requires persistent volumes.
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -204,6 +204,22 @@ celery requires persistent volumes. The user for the flower webinterface is `wge
 | `redis.storage.persistentVolumeClaimName` | PVC name when existing storage volume should be used | String | `Nil` |
 | `redis.storage.requestedSize` | Size for new PVC, when no existing PVC is used | String | `Nil` |
 | `redis.storage.className` | Storage class name when no existing storage used, takes the cluster default when `Nil` | String | `Nil` |
+
+
+## Celery
+
+Celery is used to sync exercises or ingredients. The user for the flower webinterface is `wger`. If you have enabled flower you can for example use port forwarding to connect to the web interface.
+
+```bash
+export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-app" -o jsonpath="{.items[0].metadata.name}")
+kubectl -n wger port-forward ${POD} 8080:5555
+```
+
+Get the password for the flower webinterface:
+
+```bash
+kubectl -n wger get secret flower -o jsonpath='{.data.password}' | base64 -d
+```
 
 
 ## Upgrading
