@@ -65,11 +65,6 @@ environment:
   {{- end }}
   - name: DJANGO_MEDIA_ROOT
     value: "/home/wger/media"
-  - name: SECRET_KEY
-    valueFrom:
-      secretKeyRef:
-        name: {{ .Values.app.django.secret.name | default "django" | quote }}
-        key: "secret-key"
   # axes
   - name: AXES_ENABLED
   {{- if .Values.app.axes.enabled }}
@@ -88,11 +83,6 @@ environment:
   - name: AXES_HANDLER
     value: "axes.handlers.cache.AxesCacheHandler"
   # jwt auth
-  - name: SIGNING_KEY
-    valueFrom:
-      secretKeyRef:
-        name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-        key: "signing-key"
   - name: ACCESS_TOKEN_LIFETIME
     value: {{ .Values.app.jwt.accessTokenLifetime | default "10" | quote }}
   - name: REFRESH_TOKEN_LIFETIME
@@ -140,13 +130,6 @@ environment:
     value: "redis://{{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }}/2"
   - name: CELERY_BACKEND
     value: "redis://{{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }}/2"
-  {{- if .Values.app.celery.flower.enabled }}
-  - name: CELERY_FLOWER_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
-        key: "password"
-  {{- end }}
   {{- end }}
 {{- end }}
 

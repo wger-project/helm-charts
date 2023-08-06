@@ -39,6 +39,23 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
+                  key: "secret-key"
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "signing-key"
+            {{- if .Values.app.celery.flower.enabled }}
+            - name: CELERY_FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
+                  key: "password"
+            {{- end }}
           ports:
             - containerPort: 8000
           resources:
@@ -76,6 +93,23 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
+                  key: "secret-key"
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "signing-key"
+            {{- if .Values.app.celery.flower.enabled }}
+            - name: CELERY_FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
+                  key: "password"
+            {{- end }}
           command: ["/start-worker"]
           volumeMounts:
             - name: wger-media
@@ -92,6 +126,23 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
+                  key: "secret-key"
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "signing-key"
+            {{- if .Values.app.celery.flower.enabled }}
+            - name: CELERY_FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
+                  key: "password"
+            {{- end }}
           command: ["/start-beat"]
           volumeMounts:
             - name: wger-celery-beat
@@ -109,6 +160,23 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
+                  key: "secret-key"
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "signing-key"
+            {{- if .Values.app.celery.flower.enabled }}
+            - name: CELERY_FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
+                  key: "password"
+            {{- end }}
           command: ["/start-flower"]
           ports:
             - containerPort: 5555
