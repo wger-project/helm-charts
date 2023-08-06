@@ -26,6 +26,7 @@ app:
       enabled: false
       media: null
       static: null
+      code: null
       celeryBeat: null
   resources:
     requests:
@@ -61,10 +62,14 @@ app:
   # Brute force login attacks
   # https://django-axes.readthedocs.io/en/latest/index.html
   axes:
-    enabled: true
+    enabled: false
     failureLimit: 10
     # in minutes
     cooloffTime: 30
+    # number of reverse proxies involved
+    ipwareProxyCount: null
+    # order of magnitude from last proxy for the real ip
+    ipwareMetaPrecedenceOrder: "['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]"
   #
   # celery synchronisation
   celery:

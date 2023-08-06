@@ -35,7 +35,10 @@ spec:
       containers:
         # wger app container
         - name: wger
-          {{- include "wger.container" . | indent 10 }}
+          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          env:
+            {{- include "wger.env" . | indent 10 }}
           ports:
             - containerPort: 8000
           resources:
@@ -53,6 +56,11 @@ spec:
             - name: wger-static
               mountPath: /home/wger/static
               readOnly: false
+            {{- if .Values.app.persistence.existingClaim.code }}
+            - name: wger-code
+              mountPath: /home/wger/src
+              readOnly: false
+            {{- end }}
             {{- if .Values.app.celery.enabled }}
             - name: wger-celery-beat
               mountPath: /home/wger/beat
@@ -64,27 +72,49 @@ spec:
         {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
         # celery worker
         - name: celery-worker
-          {{- include "wger.container" . | indent 10 }}
+          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          {{- include "wger.env" . | indent 10 }}
           command: ["/start-worker"]
           volumeMounts:
             - name: wger-media
               mountPath: /home/wger/media
               readOnly: false
+            {{- if .Values.app.persistence.existingClaim.code }}
+            - name: wger-code
+              mountPath: /home/wger/src
+              readOnly: false
+            {{- end }}
         # celery beat
         - name: celery-beat
-          {{- include "wger.container" . | indent 10 }}
+          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          {{- include "wger.env" . | indent 10 }}
           command: ["/start-beat"]
           volumeMounts:
             - name: wger-celery-beat
               mountPath: /home/wger/beat
               readOnly: false
+            {{- if .Values.app.persistence.existingClaim.code }}
+            - name: wger-code
+              mountPath: /home/wger/src
+              readOnly: false
+            {{- end }}
         # celery flower
           {{- if .Values.app.celery.flower.enabled }}
         - name: celery-flower
-          {{- include "wger.container" . | indent 10 }}
+          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          {{- include "wger.env" . | indent 10 }}
           command: ["/start-flower"]
           ports:
             - containerPort: 5555
+          volumeMounts:
+            {{- if .Values.app.persistence.existingClaim.code }}
+            - name: wger-code
+              mountPath: /home/wger/src
+              readOnly: false
+            {{- end }}
           {{- end }}
         {{- end }}
         {{- end }}
@@ -126,6 +156,11 @@ spec:
         - name: wger-static
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
+        {{- if .Values.app.persistence.existingClaim.code }}
+        - name: wger-code
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
+        {{- end }}
         {{- if .Values.app.celery.enabled }}
         - name: wger-celery-beat
           persistentVolumeClaim:

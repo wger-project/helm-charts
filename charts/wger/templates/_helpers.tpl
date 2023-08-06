@@ -1,8 +1,9 @@
-{{/* wger container definition used for wger-app and celery containers */}}
-{{- define "wger.container" }}
-image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
-imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
-env:
+{{/*
+ wger default environment definition
+ used for wger-app and celery containers
+*/}}
+{{- define "wger.env.default" }}
+environment:
   # general
   - name: TIME_ZONE
     value: "UTC"
@@ -46,8 +47,15 @@ env:
   - name: DJANGO_CACHE_TIMEOUT
     value: {{ .Values.app.django.secret.name | default "1296000" | quote }}
   # django general
+  {{- if .Values.ingress.enabled }}
+  - name: SITE_URL
+    value: {{ .Values.ingress.url | quote }}
+  - name: CSRF_TRUSTED_ORIGINS
+    value: "http://{{ .Values.ingress.url }},https://{{ .Values.ingress.url }},http://127.0.0.1,https://127.0.0.1,http://localhost,https://localhost"
+  {{- else }}
   - name: CSRF_TRUSTED_ORIGINS
     value: "http://127.0.0.1,https://127.0.0.1,http://localhost,https://localhost"
+  {{- end }}
   {{- if .Values.app.nginx.enabled }}
   - name: DJANGO_DEBUG
     value: "False"
@@ -62,22 +70,21 @@ env:
       secretKeyRef:
         name: {{ .Values.app.django.secret.name | default "django" | quote }}
         key: "secret-key"
-  {{- if .Values.ingress.enabled }}
-  - name: SITE_URL
-    value: {{ .Values.ingress.url | quote }}
-  {{- end }}
   # axes
-  {{- if .Values.app.axes.enabled }}
   - name: AXES_ENABLED
+  {{- if .Values.app.axes.enabled }}
     value: "True"
   {{- else }}
-  - name: AXES_ENABLED
     value: "False"
   {{- end }}
   - name: AXES_FAILURE_LIMIT
     value: {{ .Values.app.axes.failureLimit | default "10" | quote }}
   - name: AXES_COOLOFF_TIME
     value: {{ .Values.app.axes.cooloffTime | default "30" | quote }}
+  - name: AXES_IPWARE_PROXY_COUNT
+    value: {{ .Values.app.axes.ipwareProxyCount | default "None" | quote }}
+  - name: AXES_IPWARE_META_PRECEDENCE_ORDER
+    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]" | quote }}
   - name: AXES_HANDLER
     value: "axes.handlers.cache.AxesCacheHandler"
   # jwt auth
@@ -95,7 +102,7 @@ env:
   - name: WGER_USE_GUNICORN
     value: "True"
   - name: GUNICORN_CMD_ARGS
-    value: "--timeout 240"
+    value: "--timeout 240 --workers=2 --access-logformat '%({x-forwarded-for}i)s %(l)s %(u)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
   {{- end }}
   - name: EXERCISE_CACHE_TTL
     value: "18000"
@@ -141,11 +148,35 @@ env:
         key: "password"
   {{- end }}
   {{- end }}
-  # Add env from values.yaml (can override above)
-{{- with .Values.app.environment }}
-  {{- range  . }}
-  - name: {{ .name | quote }}
-    value: {{ .value | quote }}
+{{- end }}
+
+{{/*
+ merged custom environment definition with default
+ used for wger-app and celery containers
+*/}}
+{{- define "wger.env" }}
+# get default env
+{{- $envDefault := (include "wger.env.default" .) | fromYaml }}
+# get list of custom defined env
+{{- $customnames := list }}
+{{- range $custom := .Values.app.environment }}
+  {{- $customnames = append $customnames $custom.name }}
+{{- end }}
+# get default env list without custom ones (override)
+{{- $defaultlist := list }}
+{{- range $default := $envDefault.environment }}
+  {{- if has $default.name $customnames }}
+  {{- else }}
+    {{- $defaultlist = append $defaultlist $default }}
   {{- end }}
+{{- end }}
+# merge default env with values env
+{{- range $custom := .Values.app.environment }}
+  {{- $defaultlist = append $defaultlist $custom }}
+{{- end }}
+# ouput list of dict
+{{- range $defaultlist }}
+- name: {{ .name }}
+  value: {{ .value | quote }}
 {{- end }}
 {{- end }}

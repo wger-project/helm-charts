@@ -81,7 +81,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.django.secret.key` | Key for the `SECRET_KEY` | String | `randAlphaNum 50` |
 | `app.django.cache.timeout` | Cache timeout in seconds | String | `1296000` |
 
-## Jwt
+## SimpleJWT
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -97,6 +97,8 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.axes.enabled` | Enable [axes](https://django-axes.readthedocs.io/en/latest/index.html) Bruteforce protection | Boolean | `true` |
 | `app.axes.failureLimit` | Limit of failed auth | String | `10` |
 | `app.axes.cooloffTime` | in Minutes | String | `30` |
+| `app.axes.ipwareProxyCount` | Count of proxies | String | `null` |
+| `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | String | `"['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]"` |
 
 ### Nginx
 
@@ -221,6 +223,14 @@ Get the password for the flower webinterface:
 kubectl -n wger get secret flower -o jsonpath='{.data.password}' | base64 -d
 ```
 
+## Axes
+
+Bruteforce protection. Depending on your setup, you may need to configure axes to your proxy setup otherwise it will block the IP of the reverse proxy.
+
+* https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
+
+
+
 
 ## Upgrading
 
@@ -304,7 +314,7 @@ spec:
 kubectl -n wger apply -f job-dump.yaml
 ```
 
-Now move away the current db in your storage, so that the new postges image will create a new one:
+Now move away the current db in your storage, so that the new postges image will create a new one -> this needs to be done accessing your storage from outside the cluster:
 
 ```bash
 # move the old database -> can be removed after the upgrade was successful
