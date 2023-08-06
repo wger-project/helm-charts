@@ -94,7 +94,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `app.axes.enabled` | Enable [axes](https://django-axes.readthedocs.io/en/latest/index.html) Bruteforce protection | Boolean | `true` |
+| `app.axes.enabled` | Enable [axes](https://django-axes.readthedocs.io/en/latest/index.html) Bruteforce protection | Boolean | `false` |
 | `app.axes.failureLimit` | Limit of failed auth | String | `10` |
 | `app.axes.cooloffTime` | in Minutes | String | `30` |
 | `app.axes.ipwareProxyCount` | Count of proxies | String | `null` |
