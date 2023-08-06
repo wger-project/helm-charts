@@ -38,7 +38,7 @@ spec:
           image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
-            {{- include "wger.env" . | indent 10 }}
+            {{- include "wger.env" . | indent 12 }}
           ports:
             - containerPort: 8000
           resources:
@@ -74,7 +74,8 @@ spec:
         - name: celery-worker
           image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
-          {{- include "wger.env" . | indent 10 }}
+          env:
+            {{- include "wger.env" . | indent 12 }}
           command: ["/start-worker"]
           volumeMounts:
             - name: wger-media
@@ -89,7 +90,8 @@ spec:
         - name: celery-beat
           image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
-          {{- include "wger.env" . | indent 10 }}
+          env:
+            {{- include "wger.env" . | indent 12 }}
           command: ["/start-beat"]
           volumeMounts:
             - name: wger-celery-beat
@@ -105,7 +107,8 @@ spec:
         - name: celery-flower
           image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
-          {{- include "wger.env" . | indent 10 }}
+          env:
+            {{- include "wger.env" . | indent 12 }}
           command: ["/start-flower"]
           ports:
             - containerPort: 5555
@@ -156,16 +159,16 @@ spec:
         - name: wger-static
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
-        {{- if .Values.app.persistence.existingClaim.code }}
+          {{- if .Values.app.persistence.existingClaim.code }}
         - name: wger-code
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
-        {{- end }}
-        {{- if .Values.app.celery.enabled }}
+          {{- end }}
+          {{- if .Values.app.celery.enabled }}
         - name: wger-celery-beat
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
-        {{- end }}
+          {{- end }}
         {{- end }}
         {{- if .Values.app.nginx.enabled }}
         - name: nginx-conf
