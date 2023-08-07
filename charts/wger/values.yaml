@@ -1,6 +1,9 @@
 ---
 # App settings
 app:
+  # The server's timezone, for a list of possible names:
+  # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  timezone: "UTC"
   global:
     image:
       registry: docker.io
