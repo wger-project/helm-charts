@@ -6,11 +6,11 @@ on:
   push:
     branches:
       - master
-      - upgrade-wger
+      - timezone
   pull_request:
     branches:
       - master
-      - upgrade-wger
+      - timezone
 
 jobs:
   lint-test:
