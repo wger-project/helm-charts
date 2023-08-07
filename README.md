@@ -31,7 +31,7 @@ For a more productive environment you have to enable nginx as a reverse proxy. T
 
 * Kubernetes 1.15+
 * Helm 3.0+
-* PV infrastructure on the cluster if persistence is needed
+* PV infrastructure on the cluster if persistence is needed (recommended)
 * Ingress infrastructure for exposing the installation
 
 
@@ -73,7 +73,8 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.global.replicas` | Number of webserver instances that should be running. | Integer | `1` |
 | `app.global.securityContext` | Pod security context | Object | see [values.yaml](charts/wger/values.yaml)	|
 
-## Django
+
+### Django
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -81,7 +82,24 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.django.secret.key` | Key for the `SECRET_KEY` | String | `randAlphaNum 50` |
 | `app.django.cache.timeout` | Cache timeout in seconds | String | `1296000` |
 
-## SimpleJWT
+
+#### Celery
+
+Celery requires persistent volumes.
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `app.celery.enabled` | Enable celery for sync | Boolean | `True` |
+| `app.celery.syncExercises` | sync exercises | Boolean | `True` |
+| `app.celery.syncImages` | sync exercise images | Boolean | `True` |
+| `app.celery.syncVideos` | sync exercise videos | Boolean | `True` |
+| `app.celery.ingredientsFrom` | source for ingredients, possible values `WGER`,`OFF` | String | `WGER` |
+| `app.celery.flower.enabled` | enable flower webinterface for celery | Boolean | `False` |
+| `app.celery.flower.secret.name` | Name of the secret | String | `flower` |
+| `app.celery.flower.secret.password` | Password for the webinterface | String | `randAlphaNum 50` |
+
+
+### SimpleJWT
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -90,7 +108,8 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.jwt.accessTokenLifetime` | Duration of the access token, in minutes | String | `10` |
 | `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours | String | `24` |
 
-## Axes
+
+### Axes
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -99,6 +118,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.axes.cooloffTime` | in Minutes | String | `30` |
 | `app.axes.ipwareProxyCount` | Count of proxies | String | `null` |
 | `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | String | `"['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]"` |
+
 
 ### Nginx
 
@@ -164,7 +184,7 @@ There are more possible ENV variables, than the ones used in the deployment. Ple
 
 ### PostgreSQL and Redis settings
 
-The application reuses the following settings directly from the groundhog2k Helm charts, so you don't have to declare them twice:
+The following settings are declared in the groundhog2k Helm charts.
 
 
 #### PostgreSQL
@@ -180,20 +200,6 @@ The application reuses the following settings directly from the groundhog2k Helm
 | `postgres.storage.requestedSize` | Size for new PVC, when no existing PVC is used | Integer | `8Gi` |
 | `postgres.storage.className` | Storage class name when no existing storage used, takes the cluster default when `Nil` | String | `Nil` |
 
-#### Celery
-
-Celery requires persistent volumes.
-
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `app.celery.enabled` | Enable celery for sync | Boolean | `True` |
-| `app.celery.syncExercises` | sync exercises | Boolean | `True` |
-| `app.celery.syncImages` | sync exercise images | Boolean | `True` |
-| `app.celery.syncVideos` | sync exercise videos | Boolean | `True` |
-| `app.celery.ingredientsFrom` | source for ingredients, possible values `WGER`,`OFF` | String | `WGER` |
-| `app.celery.flower.enabled` | enable flower webinterface for celery | Boolean | `False` |
-| `app.celery.flower.secret.name` | Name of the secret | String | `flower` |
-| `app.celery.flower.secret.password` | Password for the webinterface | String | `randAlphaNum 50` |
 
 #### Redis
 
@@ -210,7 +216,7 @@ Celery requires persistent volumes.
 
 ## Celery
 
-Celery is used to sync exercises or ingredients. The user for the flower webinterface is `wger`. If you have enabled flower you can for example use port forwarding to connect to the web interface.
+Celery is used to sync exercises or ingredients. The user for the flower webinterface is `wger`. If you have enabled flower you can, for example use port forwarding to connect to the web interface.
 
 ```bash
 export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-app" -o jsonpath="{.items[0].metadata.name}")
@@ -223,13 +229,14 @@ Get the password for the flower webinterface:
 kubectl -n wger get secret flower -o jsonpath='{.data.password}' | base64 -d
 ```
 
+
 ## Axes
 
 Bruteforce protection. Depending on your setup, you may need to configure axes to your proxy setup otherwise it will block the IP of the reverse proxy.
 
 * https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
 
-
+**-> The axes setup can't yet be configured to do so.**
 
 
 ## Upgrading
@@ -314,7 +321,7 @@ spec:
 kubectl -n wger apply -f job-dump.yaml
 ```
 
-Now move away the current db in your storage, so that the new postges image will create a new one -> this needs to be done accessing your storage from outside the cluster:
+Now move away the current db in your storage, so that the new postges image will create a new one -> this needs to be done accessing your storage from outside the cluster or add it to the `command` in the `job-dump.yaml`:
 
 ```bash
 # move the old database -> can be removed after the upgrade was successful
@@ -350,7 +357,7 @@ Also reset the database password to the one you used, the default is `wger`:
 psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger'"
 ```
 
-Start the wger app, don't forget to set back the replicas in your values.yaml as well:
+Start the wger app, don't forget to set back the replicas in your `values.yaml` as well:
 
 ```bash
 kubectl -n wger scale --replicas=1 deploy wger-app
@@ -379,9 +386,9 @@ Generally:
 
 ## Running a highly available setup
 
-The deployment can be scaled using `app.global.replicas` to allow for more web server replicas. Persistence should be enabled as well to ensure that the different webservers have access to the same static and media shares. 
+The deployment can be scaled using `app.global.replicas` to allow for more web server replicas. Persistence should be enabled as well to ensure that the different webservers have access to the same static and media shares.
 
-In a production deployment, it is assumed that these files will be handled by a CDN/SE in front of your application so persistence remains optional. Postgres persistence should be enabled as well for all scenarios except local dev.
+Generally persistent volumes needs to be configured depending on your setup.
 
 
 ## Developing locally
@@ -395,24 +402,22 @@ If this is your first time developing a Helm chart, you'd want to try the follow
 # start minikube
 $ minikube start
 
-# deploy the helm chart using the command from above
+# deploy the helm chart from the cloned git repo
+$ cd charts/wger
 $ helm dependency update
-$ helm upgrade --install wger . --namespace wger --create-namespace
+$ helm upgrade --install wger . -n wger --create-namespace -f ../../your_values.yaml
 
 # observe that the pods start correctly
-$ kubectl get pods -n wger
-NAME                    READY   STATUS    RESTARTS      AGE
-wger-app-0              1/1     Running   1 (71s ago)   3m7s
-wger-postgresql-0       1/1     Running   3 (88s ago)   22h
-wger-redis-master-0     1/1     Running   3 (71s ago)   22h
-wger-redis-replicas-0   1/1     Running   3 (71s ago)   22h
-wger-redis-replicas-1   1/1     Running   3 (71s ago)   22h
-wger-redis-replicas-2   1/1     Running   3 (71s ago)   22h
+$ watch kubectl -n wger get pods
+NAME                          READY   STATUS    RESTARTS   AGE
+wger-app-86c65dcbb9-9ftr6     5/5     Running   0          12h
+wger-postgres-0               1/1     Running   0          39h
+wger-redis-65b686bf87-cphzm   1/1     Running   0          39h
 
 # read the logs from the init container (postgres & redis check)
 $ kubectl -n wger logs -f -l app.kubernetes.io/name=wger-app -c init-container
 
-# read the logs from the pods
+# read the logs from the wger django app
 $ kubectl -n wger logs -f -l app.kubernetes.io/name=wger-app -c wger
 PostgreSQL started :)
 *** Database does not exist, creating one now
@@ -423,8 +428,9 @@ Running migrations:
 .....
 
 # if you need to debug something in the pods, you can start a shell
-$ kubectl exec -it wger-app-0 -n wger -- bash
-wger@wger-app-0:~/src$
+$ export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-app" -o jsonpath="{.items[0].metadata.name}")
+$ kubectl -n wger exec -it $POD -c wger -- bash
+wger@wger-app-86c65dcbb9-9ftr6:~/src$
 
 # start a local proxy to test the web interface
 # Wger will then be available on http://localhost:8001/api/v1/namespaces/wger/services/wger-http:8000/proxy/en
