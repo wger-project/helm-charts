@@ -5,8 +5,10 @@
 {{- define "wger.env.default" }}
 environment:
   # general
+  - name: TZ
+    value: {{ .Values.app.timezone | default "UTC" | quote }}
   - name: TIME_ZONE
-    value: "UTC"
+    value: {{ .Values.app.timezone | default "UTC" | quote }}
   # email settings
   - name: ENABLE_EMAIL
     value: "False"

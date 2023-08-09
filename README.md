@@ -216,7 +216,26 @@ The following settings are declared in the groundhog2k Helm charts.
 
 ## Celery
 
-Celery is used to sync exercises or ingredients. The user for the flower webinterface is `wger`. If you have enabled flower you can, for example use port forwarding to connect to the web interface.
+* https://wger.readthedocs.io/en/latest/celery.html
+
+Celery is used to sync exercises or ingredients. The user for the flower webinterface is `wger`.
+
+
+### Monitoring
+
+#### Commandline
+
+* https://docs.celeryq.dev/en/stable/userguide/monitoring.html#celery-events-curses-monitor
+
+```bash
+celery -A wger events
+```
+
+`celery events` is a simple curses monitor displaying task and worker history.
+
+#### Flower Webinterface
+
+If you have enabled flower you can, for example use port forwarding to connect to the web interface.
 
 ```bash
 export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-app" -o jsonpath="{.items[0].metadata.name}")
