@@ -76,7 +76,7 @@ app:
   #
   # celery synchronisation
   celery:
-    enabled: true
+    enabled: false
     syncExercises: true
     syncImages: true
     syncVideos: true
