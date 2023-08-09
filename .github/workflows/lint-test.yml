@@ -6,11 +6,11 @@ on:
   push:
     branches:
       - master
-      - timezone
+      - 1.4
   pull_request:
     branches:
       - master
-      - timezone
+      - 1.4
 
 jobs:
   lint-test:
