@@ -49,11 +49,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
-            {{- if .Values.app.celery.flower.enabled }}
+            {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
+                  name: {{ .Values.celery.flower.secret.name | default "flower" | quote }}
                   key: "password"
             {{- end }}
           ports:
@@ -78,117 +78,12 @@ spec:
               mountPath: /home/wger/src
               readOnly: false
             {{- end }}
-            {{- if .Values.app.celery.enabled }}
+            {{- if .Values.celery.enabled }}
             - name: wger-celery-beat
               mountPath: /home/wger/beat
               readOnly: false
             {{- end }}
           {{- end }}
-        # celery
-        {{- if .Values.app.celery.enabled }}
-        {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
-        # celery worker
-        - name: celery-worker
-          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
-          env:
-            {{- include "wger.env" . | indent 12 }}
-            - name: SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
-                  key: "secret-key"
-            - name: SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "signing-key"
-            {{- if .Values.app.celery.flower.enabled }}
-            - name: CELERY_FLOWER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
-                  key: "password"
-            {{- end }}
-          command: ["/start-worker"]
-          volumeMounts:
-            - name: wger-media
-              mountPath: /home/wger/media
-              readOnly: false
-            {{- if .Values.app.persistence.existingClaim.code }}
-            - name: wger-code
-              mountPath: /home/wger/src
-              readOnly: false
-            {{- end }}
-        # celery beat
-        - name: celery-beat
-          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
-          env:
-            {{- include "wger.env" . | indent 12 }}
-            - name: SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
-                  key: "secret-key"
-            - name: SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "signing-key"
-            {{- if .Values.app.celery.flower.enabled }}
-            - name: CELERY_FLOWER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
-                  key: "password"
-            {{- end }}
-          command: ["/start-beat"]
-          volumeMounts:
-            - name: wger-celery-beat
-              mountPath: /home/wger/beat
-              readOnly: false
-            {{- if .Values.app.persistence.existingClaim.code }}
-            - name: wger-code
-              mountPath: /home/wger/src
-              readOnly: false
-            {{- end }}
-        # celery flower
-          {{- if .Values.app.celery.flower.enabled }}
-        - name: celery-flower
-          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
-          env:
-            {{- include "wger.env" . | indent 12 }}
-            - name: SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
-                  key: "secret-key"
-            - name: SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "signing-key"
-            {{- if .Values.app.celery.flower.enabled }}
-            - name: CELERY_FLOWER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.celery.flower.secret.name | default "flower" | quote }}
-                  key: "password"
-            {{- end }}
-          command: ["/start-flower"]
-          ports:
-            - containerPort: 5555
-          volumeMounts:
-            {{- if .Values.app.persistence.existingClaim.code }}
-            - name: wger-code
-              mountPath: /home/wger/src
-              readOnly: false
-            {{- end }}
-          {{- end }}
-        {{- end }}
-        {{- end }}
         # nginx container
         {{- if .Values.app.nginx.enabled }}
         - name: nginx
@@ -218,9 +113,8 @@ spec:
             - -c
             - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
               until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
-      {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) (.Values.app.nginx.enabled) }}
+      {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
       volumes:
-        {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
         - name: wger-media
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
@@ -232,15 +126,228 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
           {{- end }}
-          {{- if .Values.app.celery.enabled }}
+          {{- if .Values.celery.enabled }}
         - name: wger-celery-beat
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
           {{- end }}
-        {{- end }}
         {{- if .Values.app.nginx.enabled }}
         - name: nginx-conf
           configMap:
             name: {{ .Release.Name }}-nginx-configmap
         {{- end }}
       {{- end }}
+---
+{{- if .Values.celery.enabled }}
+# celery only works with persistence enabled
+{{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-celery
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+  {{- with .Values.celery.annotations }}
+  annotations:
+  {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote}}
+  {{- end }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.celery.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-celery
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-celery
+    {{- with .Values.celery.annotations }}
+      annotations:
+      {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote}}
+      {{- end }}
+    {{- end }}
+    spec:
+      {{- with .Values.celery.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        # celery beat
+        - name: celery-beat
+          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          env:
+            {{- include "wger.env" . | indent 12 }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
+                  key: "secret-key"
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "signing-key"
+            {{- if .Values.celery.flower.enabled }}
+            - name: CELERY_FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.celery.flower.secret.name | default "flower" | quote }}
+                  key: "password"
+            {{- end }}
+          command: ["/start-beat"]
+          volumeMounts:
+            - name: wger-celery-beat
+              mountPath: /home/wger/beat
+              readOnly: false
+            {{- if .Values.app.persistence.existingClaim.code }}
+            - name: wger-code
+              mountPath: /home/wger/src
+              readOnly: false
+            {{- end }}
+        # celery flower
+        {{- if .Values.celery.flower.enabled }}
+        - name: celery-flower
+          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          env:
+            {{- include "wger.env" . | indent 12 }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
+                  key: "secret-key"
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "signing-key"
+            - name: CELERY_FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.celery.flower.secret.name | default "flower" | quote }}
+                  key: "password"
+          command: ["/start-flower"]
+          ports:
+            - containerPort: 5555
+          volumeMounts:
+            {{- if .Values.app.persistence.existingClaim.code }}
+            - name: wger-code
+              mountPath: /home/wger/src
+              readOnly: false
+            {{- end }}
+        {{- end }}
+      volumes:
+        - name: wger-media
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
+        - name: wger-static
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
+          {{- if .Values.app.persistence.existingClaim.code }}
+        - name: wger-code
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
+          {{- end }}
+        - name: wger-celery-beat
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
+        {{- if .Values.app.nginx.enabled }}
+        - name: nginx-conf
+          configMap:
+            name: {{ .Release.Name }}-nginx-configmap
+        {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-celery-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+  {{- with .Values.celery.annotations }}
+  annotations:
+  {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote}}
+  {{- end }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.celery.replicasWorker }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-celery-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-celery-worker
+    {{- with .Values.celery.annotations }}
+      annotations:
+      {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote}}
+      {{- end }}
+    {{- end }}
+    spec:
+      {{- with .Values.celery.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        # celery worker
+        - name: celery-worker
+          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          env:
+            {{- include "wger.env" . | indent 12 }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
+                  key: "secret-key"
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "signing-key"
+            {{- if .Values.celery.flower.enabled }}
+            - name: CELERY_FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.celery.flower.secret.name | default "flower" | quote }}
+                  key: "password"
+            {{- end }}
+          command: ["/start-worker"]
+          volumeMounts:
+            - name: wger-media
+              mountPath: /home/wger/media
+              readOnly: false
+            {{- if .Values.app.persistence.existingClaim.code }}
+            - name: wger-code
+              mountPath: /home/wger/src
+              readOnly: false
+            {{- end }}
+      volumes:
+        - name: wger-media
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
+        - name: wger-static
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
+          {{- if .Values.app.persistence.existingClaim.code }}
+        - name: wger-code
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
+          {{- end }}
+        - name: wger-celery-beat
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
+        {{- if .Values.app.nginx.enabled }}
+        - name: nginx-conf
+          configMap:
+            name: {{ .Release.Name }}-nginx-configmap
+        {{- end }}
+---
+{{- end }}
+{{- end }}

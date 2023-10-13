@@ -113,7 +113,7 @@ environment:
     value: "https://wger.de"
   - name: ALLOW_UPLOAD_VIDEOS
     value: "True"
-  {{- if .Values.app.celery.enabled }}
+  {{- if .Values.celery.enabled }}
   - name: SYNC_EXERCISES_ON_STARTUP
     value: "False"
   - name: DOWNLOAD_EXERCISE_IMAGES_ON_STARTUP
@@ -121,13 +121,13 @@ environment:
   - name: USE_CELERY
     value: "True"
   - name: SYNC_EXERCISES_CELERY
-    value: {{ .Values.app.celery.syncExercises | default "True" | quote }}
+    value: {{ .Values.celery.syncExercises | default "True" | quote }}
   - name: SYNC_EXERCISE_IMAGES_CELERY
-    value: {{ .Values.app.celery.syncImages | default "True" | quote }}
+    value: {{ .Values.celery.syncImages | default "True" | quote }}
   - name: SYNC_EXERCISE_VIDEOS_CELERY
-    value: {{ .Values.app.celery.syncVideos | default "True" | quote }}
+    value: {{ .Values.celery.syncVideos | default "True" | quote }}
   - name: DOWNLOAD_INGREDIENTS_FROM
-    value: {{ .Values.app.celery.ingredientsFrom | default "WGER" | quote }}
+    value: {{ .Values.celery.ingredientsFrom | default "WGER" | quote }}
   - name: CELERY_BROKER
     value: "redis://{{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }}/2"
   - name: CELERY_BACKEND
