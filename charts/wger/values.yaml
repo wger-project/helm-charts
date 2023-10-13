@@ -80,6 +80,7 @@ celery:
   enabled: false
   annotations: {}
   replicas: 1
+  replicasWorker: 1
   securityContext:
     fsGroup: 1000
   syncExercises: true

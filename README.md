@@ -89,14 +89,18 @@ Celery requires persistent volumes.
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `celery.enabled` | Enable celery for sync | Boolean | `True` |
-| `celery.syncExercises` | sync exercises | Boolean | `True` |
-| `celery.syncImages` | sync exercise images | Boolean | `True` |
-| `celery.syncVideos` | sync exercise videos | Boolean | `True` |
-| `celery.ingredientsFrom` | source for ingredients, possible values `WGER`,`OFF` | String | `WGER` |
-| `celery.flower.enabled` | enable flower webinterface for celery | Boolean | `False` |
-| `celery.flower.secret.name` | Name of the secret | String | `flower` |
-| `celery.flower.secret.password` | Password for the webinterface | String | `randAlphaNum 50` |
+| `celery.enabled`            | Enable celery for sync | Boolean    | `True` |
+| `celery.annotations`        | Annotations            | Dictionary | `{}`   |
+| `celery.replicas`           | Enable celery for sync | Integer    | `1`    |
+| `celery.replicasWorker`     | Enable celery for sync | Integer    | `1`    |
+| `celery.securityContext`    | Pod security context   | Object     | see [values.yaml](charts/wger/values.yaml) |
+| `celery.syncExercises`      | sync exercises         | Boolean    | `True` |
+| `celery.syncImages`         | sync exercise images   | Boolean    | `True` |
+| `celery.syncVideos`         | sync exercise videos   | Boolean    | `True` |
+| `celery.ingredientsFrom`    | source for ingredients, possible values `WGER`,`OFF` | String | `WGER` |
+| `celery.flower.enabled`     | enable flower webinterface for celery | Boolean | `False` |
+| `celery.flower.secret.name` | Name of the secret     | String     | `flower` |
+| `celery.flower.secret.password` | Password for the webinterface   | String | `randAlphaNum 50` |
 
 
 ### SimpleJWT
@@ -229,8 +233,8 @@ Celery is used to sync exercises or ingredients. The user for the flower webinte
 * https://docs.celeryq.dev/en/stable/userguide/monitoring.html#celery-events-curses-monitor
 
 ```bash
-export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-app" -o jsonpath="{.items[0].metadata.name}")
-kubectl -n wger exec -ti $POD -c celery-worker -- bash
+export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-celery-worker" -o jsonpath="{.items[0].metadata.name}")
+kubectl -n wger exec -ti $POD -- bash
 
 celery -A wger events
 ```
@@ -243,7 +247,7 @@ celery -A wger events
 If you have enabled flower you can, for example use port forwarding to connect to the web interface.
 
 ```bash
-export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-app" -o jsonpath="{.items[0].metadata.name}")
+export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-celery" -o jsonpath="{.items[0].metadata.name}")
 kubectl -n wger port-forward ${POD} 8080:5555
 ```
 
