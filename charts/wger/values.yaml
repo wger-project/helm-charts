@@ -73,24 +73,29 @@ app:
     ipwareProxyCount: null
     # order of magnitude from last proxy for the real ip
     ipwareMetaPrecedenceOrder: "['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]"
-  #
-  # celery synchronisation
-  celery:
+
+#
+# celery synchronisation
+celery:
+  enabled: false
+  annotations: {}
+  replicas: 1
+  securityContext:
+    fsGroup: 1000
+  syncExercises: true
+  syncImages: true
+  syncVideos: true
+  # Where to download ingredient and their images if they are not known locally.
+  # Possible values OFF, WGER. Note that it is recommended to keep this as WGER
+  # so that we don't overwhelm the Open Food Facts servers. Needs to have USE_CELERY
+  # set to true
+  ingredientsFrom: WGER
+  # flower the webinterface for celery
+  flower:
     enabled: false
-    syncExercises: true
-    syncImages: true
-    syncVideos: true
-    # Where to download ingredient and their images if they are not known locally.
-    # Possible values OFF, WGER. Note that it is recommended to keep this as WGER
-    # so that we don't overwhelm the Open Food Facts servers. Needs to have USE_CELERY
-    # set to true
-    ingredientsFrom: WGER
-    # flower the webinterface for celery
-    flower:
-      enabled: false
-      secret:
-        name: null
-        password: null
+    secret:
+      name: null
+      password: null
 
 ingress:
   enabled: false
