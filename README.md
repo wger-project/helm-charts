@@ -12,7 +12,7 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.4 \
+  --version 0.1.5 \
   -n wger \
   --create-namespace
 ```
@@ -44,7 +44,7 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.4 \
+  --version 0.1.5 \
   -n wger \
   --create-namespace
   -f values.yaml
@@ -247,7 +247,7 @@ celery -A wger events
 If you have enabled flower you can, for example use port forwarding to connect to the web interface.
 
 ```bash
-export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-celery" -o jsonpath="{.items[0].metadata.name}")
+export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-celery-worker" -o jsonpath="{.items[0].metadata.name}")
 kubectl -n wger port-forward ${POD} 8080:5555
 ```
 
@@ -369,7 +369,7 @@ app:
 ```bash
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.4 \
+  --version 0.1.5 \
   -n wger \
   --create-namespace
   -f values.yaml
