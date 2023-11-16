@@ -138,6 +138,7 @@ Celery requires persistent volumes.
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
 | `ingress.enabled` | Whether to enable ingress. If `false`, the options from below are ignored | Boolean | `false` |
+| `ingress.ingressClassName` | The ClassName that this ingress should use | String | `` |
 | `ingress.url` | The URL that this ingress should use | String | `fit.example.com` |
 | `ingress.tls` | Whether to enable TLS. If using cert-manager, the correct annotations have to be set | Boolean | `true` |
 | `ingress.annotations` | Annotations to attach to the ingress | Dictionary | `{}` |
@@ -280,7 +281,7 @@ As a consequence the default `values.yaml` has set `imagePullPolicy` to `Always`
 To upgrade you can restart the deployment (k8s v1.15):
 
 ```bash
-kubectl -n wger rollout restart deploy wger-app
+kubectl -n wger rollout restart deploy wger-app wger-celery wger-celery-worker
 ```
 
 For PostgreSQL and Redis upgrades, please check the Groundhog2k documentation, linked at the end of the README.
