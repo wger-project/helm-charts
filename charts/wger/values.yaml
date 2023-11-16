@@ -100,6 +100,7 @@ celery:
 
 ingress:
   enabled: false
+  ingressClassName:
   url: fit.example.com
   tls: true
   annotations: {}
