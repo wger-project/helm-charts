@@ -125,6 +125,7 @@ postgres:
     name: wger
     user: wger
     password: wger
+  extraScripts: wger-pg-init
   service:
     port: 5432
   resources:
