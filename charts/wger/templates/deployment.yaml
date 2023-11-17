@@ -52,17 +52,17 @@ spec:
             - name: DJANGO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "USERDB_USER"
             - name: DJANGO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "USERDB_PASSWORD"
             - name: DJANGO_DB_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
@@ -209,17 +209,17 @@ spec:
             - name: DJANGO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "USERDB_USER"
             - name: DJANGO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "USERDB_PASSWORD"
             - name: DJANGO_DB_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
@@ -258,17 +258,17 @@ spec:
             - name: DJANGO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "USERDB_USER"
             - name: DJANGO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "USERDB_PASSWORD"
             - name: DJANGO_DB_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -284,6 +284,14 @@ spec:
               mountPath: /home/wger/src
               readOnly: false
             {{- end }}
+      initContainers:
+      - name: init-container
+        image: docker.io/busybox:latest
+        command:
+          - /bin/sh
+          - -c
+          - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
+            until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
         {{- end }}
       volumes:
         - name: wger-media
@@ -359,17 +367,17 @@ spec:
             - name: DJANGO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "USERDB_USER"
             - name: DJANGO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "USERDB_PASSWORD"
             - name: DJANGO_DB_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: {{ "wger-postgres" }}
+                  name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
@@ -388,6 +396,14 @@ spec:
               mountPath: /home/wger/src
               readOnly: false
             {{- end }}
+      initContainers:
+      - name: init-container
+        image: docker.io/busybox:latest
+        command:
+          - /bin/sh
+          - -c
+          - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
+            until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
       volumes:
         - name: wger-media
           persistentVolumeClaim:
