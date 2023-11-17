@@ -291,7 +291,8 @@ spec:
           - /bin/sh
           - -c
           - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
-            until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
+            until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
+            until wget --spider http://{{.Release.Name}}-http:8000; do echo "Waiting for wger app service ({{.Release.Name}}-http:8000)"; sleep 2; done
         {{- end }}
       volumes:
         - name: wger-media
@@ -403,7 +404,8 @@ spec:
           - /bin/sh
           - -c
           - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
-            until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
+            until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
+            until wget --spider http://{{.Release.Name}}-http:8000; do echo "Waiting for wger app service ({{.Release.Name}}-http:8000)"; sleep 2; done
       volumes:
         - name: wger-media
           persistentVolumeClaim:
