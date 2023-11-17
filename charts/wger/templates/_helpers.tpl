@@ -29,12 +29,6 @@ environment:
     value: "True"
   - name: DJANGO_DB_ENGINE
     value: "django.db.backends.postgresql"
-  - name: DJANGO_DB_USER
-    value: {{ .Values.postgres.settings.superuser | quote }}
-  - name: DJANGO_DB_PASSWORD
-    value: {{ .Values.postgres.settings.superuserPassword | quote }}
-  - name: DJANGO_DB_DATABASE
-    value: {{ .Values.postgres.userDatabase.name | quote }}
   - name: DJANGO_DB_HOST
     value: "{{ .Release.Name }}-postgres"
   - name: DJANGO_DB_PORT

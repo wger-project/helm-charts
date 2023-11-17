@@ -2,7 +2,6 @@
 
 Helm charts for wger deployment on Kubernetes
 
-
 ## TL;DR
 
 If you know what you are doing, you can go ahead and run these commands to install wger. Otherwise, keep on reading!
@@ -197,9 +196,11 @@ The following settings are declared in the groundhog2k Helm charts.
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
 | `postgres.enabled` | Enable the PostgreSQL chart | Boolean | `True` |
-| `postgres.settings.superuser	` | Superuser name | String | `wger` |
-| `postgres.settings.superuserPassword` | Password of superuser | String | `wger` |
-| `postgres.userDatabase.name` | PostgreSQL database name to use for wger | String | `wger` |
+| `postgres.settings.superuser	` | Superuser name | String | `postgres` |
+| `postgres.settings.superuserPassword` | Password of superuser | String | `postgres` |
+| `postgres.userDatabase.name` | Database name to use for wger | String | `wger` |
+| `postgres.userDatabase.user` | Username to use for wger | String | `wger` |
+| `postgres.userDatabase.password` | Password for wger user | String | `wger` |
 | `postgres.service.port` | PostreSQL service port | Integer | `5432` |
 | `postgres.storage.persistentVolumeClaimName` | PVC name when existing storage volume should be used | String | `Nil` |
 | `postgres.storage.requestedSize` | Size for new PVC, when no existing PVC is used | Integer | `8Gi` |

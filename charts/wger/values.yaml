@@ -113,13 +113,20 @@ service:
 # PostgreSQL Settings for groundhog2k chart. Only a minimum has been specified below.
 # For more options, see https://github.com/groundhog2k/helm-charts/tree/master/charts/postgres
 postgres:
-  # Note: keep these variables present as the chart uses them for the Deployment
+  # Note: keep these variables present as the wger chart uses them for the deployment
+  # the superuser and user settings will be saved into a secret
   enabled: true
+  # we need to override the fullname for simpler accessing the secret in wger
+  fullnameOverride: wger-postgres
+  # after the first installation the superuser and userDatabase settings will be ignored
+  # they will be taken from the secret
   settings:
-    superuser: wger
-    superuserPassword: wger
+    superuser: postgres
+    superuserPassword: postgres
   userDatabase:
     name: wger
+    user: wger
+    password: wger
   service:
     port: 5432
   resources:
