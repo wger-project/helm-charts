@@ -33,7 +33,3 @@ postgres:
     user: wger
     password: wger
 ```
-
-#### Name of the postgres secret
-
-For postgres we now set `fullnameOverride: wger-postgres`, this will be used to name the secret upon the first installation. So when upgrading and you have used a different helm release name than `wger` you need to modify `[yourname]-postgres` in your `values.yaml`.

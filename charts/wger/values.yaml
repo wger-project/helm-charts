@@ -116,8 +116,6 @@ postgres:
   # Note: keep these variables present as the wger chart uses them for the deployment
   # the superuser and user settings will be saved into a secret
   enabled: true
-  # we need to override the fullname for simpler accessing the secret in wger
-  fullnameOverride: wger-postgres
   # after the first installation the superuser and userDatabase settings will be ignored
   # they will be taken from the secret
   settings:
