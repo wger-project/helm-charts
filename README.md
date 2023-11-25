@@ -193,6 +193,8 @@ The following settings are declared in the groundhog2k Helm charts.
 
 #### PostgreSQL
 
+wger-app requires for the django database migrations the superuser privileges, so we grant the `postgres.userDatabase.name` `SUPERUSER` with a `postgres.extraScripts`.
+
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
 | `postgres.enabled` | Enable the PostgreSQL chart | Boolean | `True` |
@@ -201,6 +203,7 @@ The following settings are declared in the groundhog2k Helm charts.
 | `postgres.userDatabase.name` | Database name to use for wger | String | `wger` |
 | `postgres.userDatabase.user` | Username to use for wger | String | `wger` |
 | `postgres.userDatabase.password` | Password for wger user | String | `wger` |
+| `postgres.extraScripts` | A configmap used to grant privileges | String | `wger-pg-init` |
 | `postgres.service.port` | PostreSQL service port | Integer | `5432` |
 | `postgres.storage.persistentVolumeClaimName` | PVC name when existing storage volume should be used | String | `Nil` |
 | `postgres.storage.requestedSize` | Size for new PVC, when no existing PVC is used | Integer | `8Gi` |
