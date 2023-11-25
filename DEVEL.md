@@ -107,11 +107,10 @@ Go to http://localhost:10001 and login as `admin` `adminadmin` ;-)
 
 ## Advanced Setup
 
-Now when you add or changed `your_values.yaml` you simply run the `helm upgrade` again:
+Install the local-path storage provisioner from ranger to later add your local wger code in a volume:
 
 ```bash
-cd helm-charts/charts/wger
-helm upgrade --install wger . -n wger --create-namespace -f ../../your_values.yaml
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.25/deploy/local-path-storage.yaml
 ```
 
 When you activated `nginx` persistent storage will be automatically activated as a requirement. You can see the volumes (pv) and it's claims (pvc):
@@ -135,52 +134,14 @@ app:
 Manually create a volume and claim for your local wger code. For this add a new file `wger-code.yaml` and apply it to the cluster:
 
 ```yaml
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: wger-code
-spec:
-  accessModes:
-  - ReadWriteMany
-  capacity:
-    storage: 5Gi
-  persistentVolumeReclaimPolicy: Retain
-  volumeMode: Filesystem
-  storageClassName: local-storage
-  local:
-    path: /home/bbk/Documents/code/private/wger
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - minikube
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: wger-code
-spec:
-  accessModes:
-  - ReadWriteMany
-  resources:
-    requests:
-      storage: 5Gi
-  volumeMode: Filesystem
-  # volumeName should be same as PV name
-  volumeName: wger-code
-  storageClassName: "local-storage"
----
+TBD
 ```
 
 ```bash
 kubectl apply -n wger -f ../../wger-code-volume.yaml
 ```
 
-Activate the `wger-code` volume in the containers:
+Activate the new values with the `wger-code` volume in the containers:
 
 ```bash
 helm upgrade --install wger . -n wger --create-namespace -f ../../your_values.yaml
@@ -192,7 +153,7 @@ To uninstall:
 
 ```bash
 helm -n wger uninstall wger
-kubectl delete -f ../../wger-code-volume.yaml
+kubectl -n wger delete -f ../../wger-code-volume.yaml
 kubectl delete ns wger
 ```
 
