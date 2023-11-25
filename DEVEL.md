@@ -177,7 +177,7 @@ spec:
 ```
 
 ```bash
-kubectl apply -f ../../wger-code-volume.yaml
+kubectl apply -n wger -f ../../wger-code-volume.yaml
 ```
 
 Activate the `wger-code` volume in the containers:
