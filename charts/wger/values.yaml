@@ -116,8 +116,8 @@ postgres:
   # Note: keep these variables present as the wger chart uses them for the deployment
   # the superuser and user settings will be saved into a secret
   enabled: true
-  # after the first installation the superuser and userDatabase settings will be ignored
-  # they will be taken from the secret
+  # changes to the superuser and userDatabase passwords will update
+  # the secret where they are save in
   settings:
     superuser: postgres
     superuserPassword: postgres
@@ -125,6 +125,9 @@ postgres:
     name: wger
     user: wger
     password: wger
+  # the user from the user database will be turned into a superuser
+  # some database migration in django requires this
+  # otherwise it was not able to create the database
   extraScripts: wger-pg-init
   service:
     port: 5432

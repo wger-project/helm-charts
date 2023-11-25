@@ -50,5 +50,5 @@ apiVersion: v1
 metadata:
   name: wger-pg-init
 data:
-  grantSuperuser.sql: |
+  40-grantSuperuser.sql: |
     ALTER USER {{ .Values.postgres.userDatabase.name }} WITH SUPERUSER;
