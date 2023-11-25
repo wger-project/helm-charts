@@ -12,7 +12,7 @@ The superuser was named `wger`, but this seems to lead to a error in the postgre
 FATAL:  role "postgres" does not exist
 ```
 
-So you need to manually add a `postgres` superuser:
+So if you are upgrading, you need to manually add a `postgres` superuser:
 
 ```bash
 kubectl -n wger exec -ti wger-postgres-0 -- bash
@@ -21,7 +21,7 @@ psql -U wger
 CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'postgres';
 ```
 
-As well set the settings in your `values.yaml`:
+As well set the following settings in your `values.yaml`:
 
 ```yaml
 postgres:
