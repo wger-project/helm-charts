@@ -107,12 +107,6 @@ Go to http://localhost:10001 and login as `admin` `adminadmin` ;-)
 
 ## Advanced Setup
 
-Install the local-path storage provisioner from ranger to later add your local wger code in a volume:
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.25/deploy/local-path-storage.yaml
-```
-
 When you activated `nginx` persistent storage will be automatically activated as a requirement. You can see the volumes (pv) and it's claims (pvc):
 
 ```bash
@@ -121,6 +115,19 @@ kubectl get pvc -n wger
 ```
 
 There is a special claim `code` which will not be created but will overload the wger django code, this can be used to mount your local development code into the setup.
+
+First checkout the code to in the example i use `$HOME/test/wger`.
+
+As minikube is running in a VM we first need to mount the local files into the minikube VM to make it available for the kubernetes cluster. You can login to the minikube VM with `minikube ssh`.
+
+Now mount the folder into the minikube system, i use `/wger-code` here.
+
+```bash
+minikube stop
+minikube start --cni calico --mount-string="$HOME/test/wger:/wger-code"
+# or
+minikube mount $HOME/test/wger:/wger-code
+```
 
 Add the following to `your_values.yaml`.
 
@@ -138,6 +145,7 @@ TBD
 ```
 
 ```bash
+kubectl create ns wger
 kubectl apply -n wger -f ../../wger-code-volume.yaml
 ```
 
