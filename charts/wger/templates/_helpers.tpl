@@ -45,7 +45,10 @@ environment:
   # django general
   {{- if .Values.ingress.enabled }}
   - name: SITE_URL
-    value: {{ .Values.ingress.url | quote }}
+    {{- if .Values.ingress.tls }}
+    value: "https://{{ .Values.ingress.url }}"
+    {{- else }}
+    value: "http://{{ .Values.ingress.url }}"
   - name: CSRF_TRUSTED_ORIGINS
     value: "http://{{ .Values.ingress.url }},https://{{ .Values.ingress.url }},http://127.0.0.1,https://127.0.0.1,http://localhost,https://localhost"
   {{- else }}
