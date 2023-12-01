@@ -3,7 +3,7 @@ entries:
   wger:
   - apiVersion: v2
     appVersion: latest
-    created: "2023-11-17T16:37:03.625563904Z"
+    created: "2023-12-01T08:35:38.150403427Z"
     dependencies:
     - condition: postgres.enabled
       name: postgres
@@ -18,15 +18,15 @@ entries:
       - groundhog2k
       version: 0.6.14
     description: A Helm chart for Wger installation on Kubernetes
-    digest: 85c7532ef083c95304027af034b688bcfb9e478a3f40635d02a5ff951a935d72
+    digest: 0b937523c5168d76a5efa5714116a9744eb3da7efcf623a8d019f414677de03b
     maintainers:
     - email: roland@geider.net
       name: rolandgeider
     name: wger
     type: application
     urls:
-    - https://github.com/wger-project/helm-charts/releases/download/wger-0.1.6-rc.1/wger-0.1.6-rc.1.tgz
-    version: 0.1.6-rc.1
+    - https://github.com/wger-project/helm-charts/releases/download/wger-0.1.7/wger-0.1.7.tgz
+    version: 0.1.7
   - apiVersion: v2
     appVersion: latest
     created: "2023-11-25T11:22:38.608294843Z"
@@ -45,6 +45,32 @@ entries:
       version: 0.6.14
     description: A Helm chart for Wger installation on Kubernetes
     digest: f6ca6012f766fb19340bb062ed0545a4bf9a6124e35ce33415732ce49680ab61
+    maintainers:
+    - email: roland@geider.net
+      name: rolandgeider
+    name: wger
+    type: application
+    urls:
+    - https://github.com/wger-project/helm-charts/releases/download/wger-0.1.6-rc.1/wger-0.1.6-rc.1.tgz
+    version: 0.1.6-rc.1
+  - apiVersion: v2
+    appVersion: latest
+    created: "2023-11-17T16:37:03.625563904Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: https://groundhog2k.github.io/helm-charts
+      tags:
+      - groundhog2k
+      version: 0.4.5
+    - condition: redis.enabled
+      name: redis
+      repository: https://groundhog2k.github.io/helm-charts
+      tags:
+      - groundhog2k
+      version: 0.6.14
+    description: A Helm chart for Wger installation on Kubernetes
+    digest: 85c7532ef083c95304027af034b688bcfb9e478a3f40635d02a5ff951a935d72
     maintainers:
     - email: roland@geider.net
       name: rolandgeider
@@ -295,4 +321,4 @@ entries:
     urls:
     - https://github.com/wger-project/helm-charts/releases/download/wger-0.1.3/wger-0.1.3.tgz
     version: 0.1.3
-generated: "2023-11-25T11:22:38.608356568Z"
+generated: "2023-12-01T08:35:38.150547417Z"
