@@ -6,7 +6,9 @@ metadata:
 data:
   wger-app.conf: |
     upstream app_server {
-      server localhost:8000 fail_timeout=0;
+      server localhost:8000 max_fails=1 fail_timeout=2s;
+      zone upstreams 64K;
+      keepalive 2;
     }
 
     server {
@@ -19,8 +21,6 @@ data:
       access_log /var/log/nginx/access.log combined;
       error_log  /var/log/nginx/error.log warn;
 
-      keepalive_timeout 5;
-
       # path for static files (only needed for serving "local" static and media files)
       root /var/www/html/;
 
@@ -30,6 +30,8 @@ data:
       }
 
       location @proxy_to_app {
+        proxy_http_version 1.1;
+
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         {{- if .Values.ingress.tls }}
         proxy_set_header X-Forwarded-Proto https;
@@ -37,6 +39,18 @@ data:
         proxy_set_header X-Forwarded-Proto $scheme;
         {{- end }}
         proxy_set_header Host $http_host;
+
+        # keep alive
+        proxy_set_header   "Connection" "";
+
+        # https://www.getpagespeed.com/server-setup/nginx/tuning-proxy_buffer_size-in-nginx
+        proxy_buffer_size 16k;
+        proxy_busy_buffers_size 24k; # essentially, proxy_buffer_size + 2 small buffers of 4k
+        proxy_buffers 64 4k;
+        proxy_max_temp_file_size 0;
+
+        # send 500 when timeout
+        proxy_next_upstream error timeout http_500;
 
         proxy_redirect off;
         proxy_pass http://app_server;
