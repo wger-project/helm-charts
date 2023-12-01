@@ -1,6 +1,5 @@
 # Development Setup
 
-
 The following is done on a Fedora Desktop to run a minikube rootless setup. For setting it up you need administrative rights.
 
 ## Prepare the system
