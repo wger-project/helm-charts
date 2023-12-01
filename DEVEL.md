@@ -114,6 +114,8 @@ kubectl get pv
 kubectl get pvc -n wger
 ```
 
+**@todo sorry but, mounting with rootless podman and minikube doesn't work yet**
+
 There is a special claim `code` which will not be created but will overload the wger django code, this can be used to mount your local development code into the setup.
 
 First checkout the code to in the example i use `$HOME/test/wger`.
