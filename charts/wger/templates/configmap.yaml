@@ -6,7 +6,7 @@ metadata:
 data:
   wger-app.conf: |
     upstream app_server {
-      server localhost:8000 max_fails=1 fail_timeout=2s;
+      server localhost:8000 max_fails=1 fail_timeout=10s;
       zone upstreams 64K;
       keepalive 2;
     }
