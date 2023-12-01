@@ -31,7 +31,11 @@ data:
 
       location @proxy_to_app {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        {{- if .Values.ingress.tls }}
+        proxy_set_header X-Forwarded-Proto https;
+        {{- else }}
         proxy_set_header X-Forwarded-Proto $scheme;
+        {{- end }}
         proxy_set_header Host $http_host;
 
         proxy_redirect off;
