@@ -17,6 +17,7 @@ app:
     securityContext:
       fsGroup: 1000
   persistence:
+    # this will be overriden to `true` when nginx is enabled
     enabled: false
     storageClass: null
     accessModes:

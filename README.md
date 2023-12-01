@@ -1,6 +1,9 @@
 # wger
 
-Helm charts for wger deployment on Kubernetes
+Helm charts for wger deployment on Kubernetes.
+
+* https://wger.readthedocs.io
+
 
 ## TL;DR
 
@@ -428,6 +431,8 @@ Generally persistent volumes needs to be configured depending on your setup.
 
 ## Developing locally
 
+The following is a basic instruction, for a more in-depth manual please have a look at [DEVEL.md](DEVEL.md). It also covers mounting the wger django code into the container.
+
 In order to develop locally, you will need [minikube](https://minikube.sigs.k8s.io/docs/) installed.
 It sets a local Kubernetes cluster that you can use for testing the Helm chart.
 
@@ -467,10 +472,9 @@ $ export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-app" -o 
 $ kubectl -n wger exec -it $POD -c wger -- bash
 wger@wger-app-86c65dcbb9-9ftr6:~/src$
 
-# start a local proxy to test the web interface
-# Wger will then be available on http://localhost:8001/api/v1/namespaces/wger/services/wger-http:8000/proxy/en
-$ kubectl proxy
-Starting to serve on 127.0.0.1:8001
+# start a port forwarding to access the webinterface
+$ echo "wger runs on: http://localhost:10001"
+$ kubectl -n wger port-forward ${POD} 10001:8000
 
 # when you are finished with the testing, stop minikube
 $ minikube stop

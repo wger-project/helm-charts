@@ -1,6 +1,13 @@
 # yamllint disable rule:line-length
 ---
-# This is a basic workflow to help you get started with Actions
+# This automatic helm chart releaser Github Action that uses Microsofts Azure setup-helm
+#   * https://github.com/Azure/setup-helm
+# and helm's chart-releaser-action which uses the https://github.com/helm/chart-releaser image
+#   * https://github.com/helm/chart-releaser-action
+#
+# It only creates a new package when there is not yet one in the same version
+# It will not automatically mark the new release as latest
+#
 
 name: Release helm chart
 
@@ -49,3 +56,4 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_SKIP_EXISTING: true
+          MARK_AS_LATEST: false
