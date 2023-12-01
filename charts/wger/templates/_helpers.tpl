@@ -78,6 +78,7 @@ environment:
     value: {{ .Values.app.axes.cooloffTime | default "30" | quote }}
   - name: AXES_IPWARE_PROXY_COUNT
     value: {{ .Values.app.axes.ipwareProxyCount | default "None" | quote }}
+    # @todo bad default, use the default from axes REMOTE_ADDR only
   - name: AXES_IPWARE_META_PRECEDENCE_ORDER
     value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]" | quote }}
   - name: AXES_HANDLER
@@ -95,7 +96,7 @@ environment:
     # forward-allow-ips="*" for image serving https url
     # accesslog: remote ip - client ip - x-real-ip - x-forward-for -
   - name: GUNICORN_CMD_ARGS
-    value: "--timeout 240 --workers 2 --worker-class gthread --threads 2 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
+    value: "--timeout 240 --workers 2 --worker-class gthread --threads 3 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
   {{- end }}
   - name: EXERCISE_CACHE_TTL
     value: "18000"
