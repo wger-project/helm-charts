@@ -73,7 +73,7 @@ environment:
     value: "False"
   {{- end }}
   - name: AXES_LOCKOUT_PARAMETERS
-    value: {{ .Values.app.axes.lockoutParameters | default "['ip_address']" }}
+    value: {{ .Values.app.axes.lockoutParameters | default "ip_address" | quote }}
   - name: AXES_FAILURE_LIMIT
     value: {{ .Values.app.axes.failureLimit | default "10" | quote }}
   - name: AXES_COOLOFF_TIME
@@ -82,7 +82,7 @@ environment:
     value: {{ .Values.app.axes.ipwareProxyCount | default "0" }}
     # @todo bad default, use the default from axes REMOTE_ADDR only
   - name: AXES_IPWARE_META_PRECEDENCE_ORDER
-    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]" }}
+    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "HTTP_X_FORWARDED_FOR,REMOTE_ADDR," | quote }}
   - name: AXES_HANDLER
     value: "axes.handlers.cache.AxesCacheHandler"
   # jwt auth
