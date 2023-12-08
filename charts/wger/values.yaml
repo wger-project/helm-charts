@@ -67,14 +67,14 @@ app:
   # https://django-axes.readthedocs.io/en/latest/index.html
   axes:
     enabled: false
-    lockoutParameters: "['ip_address']"
+    lockoutParameters: "ip_address"
     failureLimit: 10
     # in minutes
     cooloffTime: 30
     # number of reverse proxies involved
-    ipwareProxyCount: null
+    ipwareProxyCount: 0
     # order of magnitude from last proxy for the real ip
-    ipwareMetaPrecedenceOrder: "['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]"
+    ipwareMetaPrecedenceOrder: "X_FORWARDED_FOR,REMOTE_ADDR"
 
 #
 # celery synchronisation

@@ -120,11 +120,11 @@ Celery requires persistent volumes.
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
 | `app.axes.enabled` | Enable [axes](https://django-axes.readthedocs.io/en/latest/index.html) Bruteforce protection | Boolean | `false` |
-| `app.axes.lockoutParameters` | List | `"ip_address"` |
+| `app.axes.lockoutParameters` | List (comma separated string) | `"ip_address"` |
 | `app.axes.failureLimit` | Limit of failed auth | String | `10` |
 | `app.axes.cooloffTime` | in Minutes | String | `30` |
 | `app.axes.ipwareProxyCount` | Count of proxies | String | `0` |
-| `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | List | `"HTTP_X_FORWARDED_FOR,REMOTE_ADDR,"` |
+| `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | List (comma separated string) | `"X_FORWARDED_FOR,REMOTE_ADDR"` |
 
 
 ### Nginx
