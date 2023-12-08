@@ -123,7 +123,7 @@ Celery requires persistent volumes.
 | `app.axes.lockoutParameters` | String | `"['ip_address']"` |
 | `app.axes.failureLimit` | Limit of failed auth | String | `10` |
 | `app.axes.cooloffTime` | in Minutes | String | `30` |
-| `app.axes.ipwareProxyCount` | Count of proxies | String | `null` |
+| `app.axes.ipwareProxyCount` | Count of proxies | String | `0` |
 | `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | String | `"['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]"` |
 
 
