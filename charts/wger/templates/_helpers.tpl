@@ -72,6 +72,8 @@ environment:
   {{- else }}
     value: "False"
   {{- end }}
+  - name: AXES_LOCKOUT_PARAMETERS
+    value: {{ .Values.app.axes.lockoutParameters | default "['ip_address']" | quote }}
   - name: AXES_FAILURE_LIMIT
     value: {{ .Values.app.axes.failureLimit | default "10" | quote }}
   - name: AXES_COOLOFF_TIME

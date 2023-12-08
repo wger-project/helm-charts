@@ -67,6 +67,7 @@ app:
   # https://django-axes.readthedocs.io/en/latest/index.html
   axes:
     enabled: false
+    lockoutParameters: "['ip_address']"
     failureLimit: 10
     # in minutes
     cooloffTime: 30
