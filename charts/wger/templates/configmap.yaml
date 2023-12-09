@@ -44,8 +44,8 @@ data:
         proxy_set_header   "Connection" "";
 
         # https://www.getpagespeed.com/server-setup/nginx/tuning-proxy_buffer_size-in-nginx
-        proxy_buffer_size 16k;
-        proxy_busy_buffers_size 24k; # essentially, proxy_buffer_size + 2 small buffers of 4k
+        proxy_buffer_size 32k;
+        proxy_busy_buffers_size 40k; # essentially, proxy_buffer_size + 2 small buffers of 4k
         proxy_buffers 64 4k;
         proxy_max_temp_file_size 0;
 
