@@ -1,0 +1,90 @@
+---
+#
+# The following example uses:
+#
+# * uses manually created storages (pv & pvc)
+# * nginx as reverse proxy
+# * enables celery for exercise syncs
+# * enables email
+# * enables axes with reverse proxy configuration listening for X_FORWARDED_FOR header
+# * modifies the gunicorn start parameters
+# * enables a ingress assuming cert-manager is setup with a let's encrypt issuer and traefik
+#
+# Have a look at the packaged values.yaml for defaults and more settings:
+#   * https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml
+#
+# App settings
+app:
+  timezone: "Etc/Zulu"
+  global:
+    replicas: 1
+    # image:
+    #   PullPolicy: IfNotPresent
+  nginx:
+    enabled: true
+  axes:
+    enabled: true
+    failureLimit: 10
+    # in minutes
+    cooloffTime: 30
+    # number of reverse proxies involved
+    ipwareProxyCount: 1
+    # order of magnitude from last proxy for the real ip
+    ipwareMetaPrecedenceOrder: "X_FORWARDED_FOR,REMOTE_ADDR"
+  persistence:
+    enabled: true
+    existingClaim:
+      enabled: true
+      media: wger-media
+      static: wger-static
+      celeryBeat: wger-celery-beat
+  environment:
+    - name: ENABLE_EMAIL
+      value: "True"
+    - name: EMAIL_HOST
+      value: "mail.example.com"
+    - name: EMAIL_HOST_USER
+      value: "fit@example.com"
+    - name: EMAIL_HOST_PASSWORD
+      value: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    - name: FROM_EMAIL
+      value: "fit@example.com"
+    - name: GUNICORN_CMD_ARGS
+      value: "--timeout 240 --workers 2 --worker-class gthread --threads 3 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
+
+celery:
+    enabled: true
+
+ingress:
+  enabled: true
+  url: fit.example.com
+  tls: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.class: traefik
+
+postgres:
+  enabled: true
+  settings:
+    superuser: postgres
+    superuserPassword: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  userDatabase:
+    name: wger
+    user: wger
+    password: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  service:
+    port: 5432
+  storage:
+    persistentVolumeClaimName: wger-db
+    className: "csi-cephfs-sc"
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+    password: wger
+  storage:
+    persistentVolumeClaimName: wger-redis
+    className: "csi-cephfs-sc"
+  service:
+    serverPort: 6379
