@@ -1,6 +1,6 @@
 ---
 apiVersion: v2
-version: 0.1.9
+version: 0.1.10-rc.11
 appVersion: latest
 name: wger
 description: A Helm chart for Wger installation on Kubernetes
@@ -8,6 +8,7 @@ type: application
 maintainers:
   - name: rolandgeider
     email: roland@geider.net
+  - name: bbkz
 dependencies:
   - name: postgres
     condition: postgres.enabled

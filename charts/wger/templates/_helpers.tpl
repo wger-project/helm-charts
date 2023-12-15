@@ -72,14 +72,17 @@ environment:
   {{- else }}
     value: "False"
   {{- end }}
+  - name: AXES_LOCKOUT_PARAMETERS
+    value: {{ .Values.app.axes.lockoutParameters | default "ip_address" | quote }}
   - name: AXES_FAILURE_LIMIT
     value: {{ .Values.app.axes.failureLimit | default "10" | quote }}
   - name: AXES_COOLOFF_TIME
     value: {{ .Values.app.axes.cooloffTime | default "30" | quote }}
   - name: AXES_IPWARE_PROXY_COUNT
-    value: {{ .Values.app.axes.ipwareProxyCount | default "None" | quote }}
+    value: {{ .Values.app.axes.ipwareProxyCount | default "0" }}
+    # @todo bad default, use the default from axes REMOTE_ADDR only
   - name: AXES_IPWARE_META_PRECEDENCE_ORDER
-    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]" | quote }}
+    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "X_FORWARDED_FOR,REMOTE_ADDR" | quote }}
   - name: AXES_HANDLER
     value: "axes.handlers.cache.AxesCacheHandler"
   # jwt auth
@@ -91,8 +94,11 @@ environment:
   {{- if .Values.app.nginx.enabled }}
   - name: WGER_USE_GUNICORN
     value: "True"
+    # workers (2x CPU Cores +1), rpi4 works well with 2 worker / 2 threads / 1 pod
+    # forward-allow-ips="*" for image serving https url
+    # accesslog: remote ip - client ip - x-real-ip - x-forward-for -
   - name: GUNICORN_CMD_ARGS
-    value: "--timeout 240 --workers=2 --access-logformat '%({x-forwarded-for}i)s %(l)s %(u)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
+    value: "--timeout 240 --workers 4 --worker-class gthread --threads 3 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
   {{- end }}
   - name: EXERCISE_CACHE_TTL
     value: "18000"

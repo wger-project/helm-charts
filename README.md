@@ -120,10 +120,11 @@ Celery requires persistent volumes.
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
 | `app.axes.enabled` | Enable [axes](https://django-axes.readthedocs.io/en/latest/index.html) Bruteforce protection | Boolean | `false` |
+| `app.axes.lockoutParameters` | List (comma separated string) | `"ip_address"` |
 | `app.axes.failureLimit` | Limit of failed auth | String | `10` |
 | `app.axes.cooloffTime` | in Minutes | String | `30` |
-| `app.axes.ipwareProxyCount` | Count of proxies | String | `null` |
-| `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | String | `"['HTTP_X_FORWARDED_FOR','REMOTE_ADDR',]"` |
+| `app.axes.ipwareProxyCount` | Count of proxies | String | `0` |
+| `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | List (comma separated string) | `"X_FORWARDED_FOR,REMOTE_ADDR"` |
 
 
 ### Nginx
@@ -270,11 +271,18 @@ kubectl -n wger get secret flower -o jsonpath='{.data.password}' | base64 -d
 
 ## Axes
 
-Bruteforce protection. Depending on your setup, you may need to configure axes to your proxy setup otherwise it will block the IP of the reverse proxy.
+Bruteforce protection. Depending on your setup, you may need to configure axes to your proxy setup otherwise it will block by default the IP which can be your reverse proxy.
 
 * https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
+* https://django-axes.readthedocs.io/en/latest/5_customization.html#customizing-lockout-parameters
 
 **-> The axes setup can't yet be configured to do so.**
+
+```bash
+python3 manage.py axes_reset
+python3 manage.py axes_reset_ip [IP]
+python3 manage.py axes_reset_username [USERNAME]
+```
 
 
 ## Upgrading
