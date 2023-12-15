@@ -104,6 +104,9 @@ spec:
         - name: nginx
           image: {{ .Values.app.nginx.image }}
           imagePullPolicy: {{ .Values.app.nginx.imagePullPolicy }}
+          env:
+            - name: TZ
+              value: {{ .Values.app.timezone | default "UTC" | quote }}
           ports:
             - containerPort: 8080
               protocol: TCP
