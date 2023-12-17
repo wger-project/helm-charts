@@ -41,7 +41,7 @@ environment:
   - name: DJANGO_CACHE_CLIENT_CLASS
     value: "django_redis.client.DefaultClient"
   - name: DJANGO_CACHE_TIMEOUT
-    value: {{ .Values.app.django.secret.name | default "1296000" | quote }}
+    value: {{ .Values.app.django.cache.timeout | default "1296000" | quote }}
   # django general
   {{- if .Values.ingress.enabled }}
   - name: SITE_URL
