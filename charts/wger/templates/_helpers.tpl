@@ -82,7 +82,7 @@ environment:
     value: {{ int .Values.app.axes.ipwareProxyCount | default "0" | quote }}
     # @todo bad default, use the default from axes REMOTE_ADDR only
   - name: AXES_IPWARE_META_PRECEDENCE_ORDER
-    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "X_FORWARDED_FOR,REMOTE_ADDR" | quote }}
+    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "HTTP_X_FORWARDED_FOR,REMOTE_ADDR" | quote }}
   - name: AXES_HANDLER
     value: "axes.handlers.cache.AxesCacheHandler"
   # jwt auth
