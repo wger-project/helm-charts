@@ -276,8 +276,6 @@ Bruteforce protection. Depending on your setup, you may need to configure axes t
 * https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
 * https://django-axes.readthedocs.io/en/latest/5_customization.html#customizing-lockout-parameters
 
-**-> The axes setup can't yet be configured to do so.**
-
 ```bash
 python3 manage.py axes_reset
 python3 manage.py axes_reset_ip [IP]
