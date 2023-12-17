@@ -32,16 +32,16 @@ environment:
   - name: DJANGO_DB_HOST
     value: "{{ .Release.Name }}-postgres"
   - name: DJANGO_DB_PORT
-    value: {{ .Values.postgres.service.port | quote }}
+    value: {{ int .Values.postgres.service.port | quote }}
   # django cache
   - name: DJANGO_CACHE_BACKEND
     value: "django_redis.cache.RedisCache"
   - name: DJANGO_CACHE_LOCATION
-    value: "redis://{{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }}/1"
+    value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/1"
   - name: DJANGO_CACHE_CLIENT_CLASS
     value: "django_redis.client.DefaultClient"
   - name: DJANGO_CACHE_TIMEOUT
-    value: {{ .Values.app.django.cache.timeout | default 1296000 }}
+    value: {{ int ".Values.app.django.cache.timeout" | default "1296000" | quote }}
   # django general
   {{- if .Values.ingress.enabled }}
   - name: SITE_URL
@@ -75,11 +75,11 @@ environment:
   - name: AXES_LOCKOUT_PARAMETERS
     value: {{ .Values.app.axes.lockoutParameters | default "ip_address" | quote }}
   - name: AXES_FAILURE_LIMIT
-    value: {{ .Values.app.axes.failureLimit | default "10" | quote }}
+    value: {{ int .Values.app.axes.failureLimit | default "10" | quote }}
   - name: AXES_COOLOFF_TIME
-    value: {{ .Values.app.axes.cooloffTime | default "30" | quote }}
+    value: {{ int .Values.app.axes.cooloffTime | default "30" | quote }}
   - name: AXES_IPWARE_PROXY_COUNT
-    value: {{ .Values.app.axes.ipwareProxyCount | default "0" }}
+    value: {{ int .Values.app.axes.ipwareProxyCount | default "0" | quote }}
     # @todo bad default, use the default from axes REMOTE_ADDR only
   - name: AXES_IPWARE_META_PRECEDENCE_ORDER
     value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "X_FORWARDED_FOR,REMOTE_ADDR" | quote }}
@@ -87,9 +87,9 @@ environment:
     value: "axes.handlers.cache.AxesCacheHandler"
   # jwt auth
   - name: ACCESS_TOKEN_LIFETIME
-    value: {{ .Values.app.jwt.accessTokenLifetime | default "10" | quote }}
+    value: {{ int .Values.app.jwt.accessTokenLifetime | default "10" | quote }}
   - name: REFRESH_TOKEN_LIFETIME
-    value: {{ .Values.app.jwt.refreshTokenLifetime | default "24" | quote }}
+    value: {{ int .Values.app.jwt.refreshTokenLifetime | default "24" | quote }}
   # others
   {{- if .Values.app.nginx.enabled }}
   - name: WGER_USE_GUNICORN
@@ -133,9 +133,9 @@ environment:
   - name: DOWNLOAD_INGREDIENTS_FROM
     value: {{ .Values.celery.ingredientsFrom | default "WGER" | quote }}
   - name: CELERY_BROKER
-    value: "redis://{{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }}/2"
+    value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
   - name: CELERY_BACKEND
-    value: "redis://{{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }}/2"
+    value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
   {{- end }}
 {{- end }}
 
