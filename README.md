@@ -124,7 +124,7 @@ Celery requires persistent volumes.
 | `app.axes.failureLimit` | Limit of failed auth | String | `10` |
 | `app.axes.cooloffTime` | in Minutes | String | `30` |
 | `app.axes.ipwareProxyCount` | Count of proxies | String | `0` |
-| `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | List (comma separated string) | `"X_FORWARDED_FOR,REMOTE_ADDR"` |
+| `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | List (comma separated string) | `"HTTP_X_FORWARDED_FOR,REMOTE_ADDR"` |
 
 
 ### Nginx
@@ -185,7 +185,7 @@ Celery requires persistent volumes.
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
-| `app.environment` | Array of objects, representing additional environment variables to set for the deployment. | Array | see [_helpers.yaml](charts/wger/templates/_helpers.yaml) and [values.yaml](charts/wger/values.yaml) |
+| `app.environment` | Array of objects, representing additional environment variables to set for the deployment. | Array | see [_helpers.yaml](charts/wger/templates/_helpers.tpl) and [values.yaml](charts/wger/values.yaml) |
 
 There are more possible ENV variables, than the ones used in the deployment. Please check [prod.env](https://github.com/wger-project/docker/blob/master/config/prod.env).
 
@@ -282,6 +282,12 @@ python3 manage.py axes_reset_ip [IP]
 python3 manage.py axes_reset_username [USERNAME]
 ```
 
+To temporary disable privacy mode to see the blocked ip in the log you can login to the container and add the following setting:
+
+```bas
+echo "AXES_SENSITIVE_PARAMETERS = []" >>settings.py
+```
+
 
 ## Upgrading
 
@@ -289,7 +295,7 @@ wger is developped in a rolling release manner, so the docker image of the relea
 
 This means we cannot upgrade with changing the image tag.
 
-As a consequence the default `values.yaml` has set `imagePullPolicy` to `Always`, this means on every restart of the pod the image will be downloaded.
+As a consequence the default `values.yaml` has set `imagePullPolicy` to `Always`, this means if the kubelet has a container image with that exact digest cached locally, the kubelet uses its cached image; otherwise, the kubelet pulls the image with the resolved digest, and uses that image to launch the container.
 
 To upgrade you can restart the deployment (k8s v1.15):
 
@@ -297,7 +303,7 @@ To upgrade you can restart the deployment (k8s v1.15):
 kubectl -n wger rollout restart deploy wger-app wger-celery wger-celery-worker
 ```
 
-For PostgreSQL and Redis upgrades, please check the Groundhog2k documentation, linked at the end of the README.
+For PostgreSQL and Redis upgrades, please check the Groundhog2k documentation, linked at the end.
 
 
 ### Postgres Upgrade Notes
