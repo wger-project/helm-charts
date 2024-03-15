@@ -34,10 +34,10 @@ app:
       celeryBeat: null
   resources:
     requests:
-      memory: 128Mi
+      memory: 512Mi
       cpu: 100m
     limits:
-      memory: 512Mi
+      memory: 1Gi
       cpu: 500m
   # when nginx is enabled persistent volumes are required
   # and therefore automatically enabled
@@ -135,7 +135,7 @@ postgres:
     port: 5432
   resources:
     limits:
-      cpu: 300m
+      cpu: 500m
       memory: 512Mi
     requests:
       cpu: 100m
