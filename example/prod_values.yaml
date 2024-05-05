@@ -66,12 +66,17 @@ ingress:
 postgres:
   enabled: true
   settings:
-    superuser: postgres
-    superuserPassword: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    superuser:
+      value: postgres
+    superuserPassword:
+      value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   userDatabase:
-    name: wger
-    user: wger
-    password: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    name:
+      value: wger
+    user:
+      value: wger
+    password:
+      value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   service:
     port: 5432
   storage:

@@ -121,12 +121,17 @@ postgres:
   # changes to the superuser and userDatabase passwords will update
   # the secret where they are save in
   settings:
-    superuser: postgres
-    superuserPassword: postgres
+    superuser:
+      value: postgres
+    superuserPassword:
+      value: postgres
   userDatabase:
-    name: wger
-    user: wger
-    password: wger
+    name: 
+      value: wger
+    user:
+      value: wger
+    password:
+      value: wger
   # the user from the user database will be turned into a superuser
   # some database migration in django requires this
   # otherwise it was not able to create the database
