@@ -2,6 +2,11 @@
 
 * redis upgrade
 * postgres minor upgrade
+* setting a redis password is now possible
+
+### Upgrade
+
+#### Postgres values change
 
 Upgraded chart from groundhog2k for postgres requires changes to the `values.yml`:
 
@@ -21,9 +26,18 @@ postgres:
       value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
-* setting a redis password is now possible
+#### Redis password
 
-This requires you to set the following `env` and `args`, when enabling it.
+When enabling the redis password after the installation (upgrade), it is required to set the password once in the `values.yml`, as soon as the secret is created it can be removed.
+
+```yaml
+redis:
+  auth:
+    enabled: true
+    password: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+Enabling redis authentication, requires you to set the following `env` and `args`, for the redis container:
 
 ```yaml
 redis:
