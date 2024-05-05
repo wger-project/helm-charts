@@ -235,6 +235,17 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            # to enable redis authentication
+            # additional settings in the values
+            # must be made, passed to the redis
+            # container
+            {{- if .Values.redis.auth.enabled }}
+            - name: DJANGO_CACHE_CLIENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "redis"
+                  key: "redis-password"
+            {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -284,6 +295,17 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            # to enable redis authentication
+            # additional settings in the values
+            # must be made, passed to the redis
+            # container
+            {{- if .Values.redis.auth.enabled }}
+            - name: DJANGO_CACHE_CLIENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "redis"
+                  key: "redis-password"
+            {{- end }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -394,6 +416,17 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            # to enable redis authentication
+            # additional settings in the values
+            # must be made, passed to the redis
+            # container
+            {{- if .Values.redis.auth.enabled }}
+            - name: DJANGO_CACHE_CLIENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "redis"
+                  key: "redis-password"
+            {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
