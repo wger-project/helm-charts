@@ -219,8 +219,8 @@ wger-app requires for the django database migrations the superuser privileges, s
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
 | `redis.enabled` | Enable the redis chart | Boolean | `true` |
-| `redis.auth.enabled` | Whether to enable redis login. Currently, only `false` is supported | Boolean | `false` |
-| `redis.auth.password` | Password for redis login. Not required if `redis.auth.enabled` is `false` | String | `wger` |
+| `redis.auth.enabled` | Whether to enable redis login. | Boolean | `false` |
+| `redis.auth.password` | Password for redis login. Not required if `redis.auth.enabled` is `false` | String | `randAlphaNum 25` |
 | `redis.service.serverPort` | Redis server service port | Integer | `6379` |
 | `redis.storage.persistentVolumeClaimName` | PVC name when existing storage volume should be used | String | `Nil` |
 | `redis.storage.requestedSize` | Size for new PVC, when no existing PVC is used | String | `Nil` |
