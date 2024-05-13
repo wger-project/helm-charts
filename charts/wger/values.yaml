@@ -126,7 +126,7 @@ postgres:
     superuserPassword:
       value: postgres
   userDatabase:
-    name: 
+    name:
       value: wger
     user:
       value: wger
@@ -170,7 +170,7 @@ redis:
     enabled: false
     # default no password set, this will randomly create
     # one upon first installation
-    #password: XXXXXXXXXXXXXXXXXX
+    # password: XXXXXXXXXXXXXXXXXX
   # Uncomment the following to enable password authentication:
   # # Additional environment variables (Redis server and Sentinel)
   # env:
