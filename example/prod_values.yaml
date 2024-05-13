@@ -66,12 +66,17 @@ ingress:
 postgres:
   enabled: true
   settings:
-    superuser: postgres
-    superuserPassword: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    superuser:
+      value: postgres
+    superuserPassword:
+      value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   userDatabase:
-    name: wger
-    user: wger
-    password: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    name:
+      value: wger
+    user:
+      value: wger
+    password:
+      value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   service:
     port: 5432
   storage:
@@ -81,8 +86,17 @@ postgres:
 redis:
   enabled: true
   auth:
-    enabled: false
-    password: wger
+    enabled: true
+  # Additional environment variables (Redis server and Sentinel)
+  env:
+    - name: REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: redis
+          key: redis-password
+  # Arguments for the container entrypoint process (Redis server)
+  args:
+    - "--requirepass $(REDIS_PASSWORD)"
   storage:
     persistentVolumeClaimName: wger-redis
     className: "csi-cephfs-sc"

@@ -1,3 +1,60 @@
+## 0.2.0
+
+* redis upgrade
+* postgres minor upgrade
+* setting a redis password is now possible
+
+### Upgrade
+
+#### Postgres values change
+
+Upgraded chart from groundhog2k for postgres requires changes to the `values.yml`:
+
+```yaml
+postgres:
+  settings:
+    superuser:
+      value: postgres
+    superuserPassword:
+      value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  userDatabase:
+    name:
+      value: wger
+    user:
+      value: wger
+    password:
+      value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+#### Redis password
+
+When enabling the redis password after the installation (upgrade), it is required to set the password once in the `values.yml`, as soon as the secret is created it can be removed.
+
+```yaml
+redis:
+  auth:
+    enabled: true
+    password: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+Enabling redis authentication, requires you to set the following `env` and `args`, for the redis container:
+
+```yaml
+redis:
+  auth:
+    enabled: true
+  # Additional environment variables (Redis server and Sentinel)
+  env:
+    - name: REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: redis
+          key: redis-password
+  # Arguments for the container entrypoint process (Redis server)
+  args:
+    - "--requirepass $(REDIS_PASSWORD)"
+```
+
 ## 0.1.6
 
 * get the database credentials from the secret, like the postgres chart does

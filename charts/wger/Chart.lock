@@ -1,9 +1,9 @@
 dependencies:
 - name: postgres
   repository: https://groundhog2k.github.io/helm-charts
-  version: 0.4.5
+  version: 1.3.1
 - name: redis
   repository: https://groundhog2k.github.io/helm-charts
-  version: 0.6.14
-digest: sha256:19881f3f3425a4b56c047feb0529f2e0729eafb73b294b8770e7fccbb4ba802f
-generated: "2023-07-26T10:55:01.686592589+02:00"
+  version: 1.2.0
+digest: sha256:6a2d1e1a702d88285fce9e5dfcf72d4fa78c42a9b255fa77a8264e1df41c065f
+generated: "2024-05-05T14:31:11.163945533+02:00"

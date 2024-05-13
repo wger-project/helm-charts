@@ -121,12 +121,17 @@ postgres:
   # changes to the superuser and userDatabase passwords will update
   # the secret where they are save in
   settings:
-    superuser: postgres
-    superuserPassword: postgres
+    superuser:
+      value: postgres
+    superuserPassword:
+      value: postgres
   userDatabase:
-    name: wger
-    user: wger
-    password: wger
+    name:
+      value: wger
+    user:
+      value: wger
+    password:
+      value: wger
   # the user from the user database will be turned into a superuser
   # some database migration in django requires this
   # otherwise it was not able to create the database
@@ -154,9 +159,29 @@ postgres:
 redis:
   # Note: keep these variables present as the chart uses them for the Deployment
   enabled: true
+  # auth: is used in wger-helm-charts to auto-create a secret for redis
+  #
+  # if you enable auth it will create new secret from auth.password
+  # if auth.password is missing it will randomly generate one.
+  #
+  # to enable authentication in the redis container, you need
+  # to enable the env and args mentioned below
   auth:
     enabled: false
-    password: wger
+    # default no password set, this will randomly create
+    # one upon first installation
+    # password: XXXXXXXXXXXXXXXXXX
+  # Uncomment the following to enable password authentication:
+  # # Additional environment variables (Redis server and Sentinel)
+  # env:
+  #   - name: REDIS_PASSWORD
+  #     valueFrom:
+  #       secretKeyRef:
+  #         name: redis
+  #         key: redis-password
+  # # Arguments for the container entrypoint process (Redis server)
+  # args:
+  #   - "--requirepass $(REDIS_PASSWORD)"
   storage:
     ##  Set persistentVolumenClaimName to reference an existing PVC
     persistentVolumeClaimName:
