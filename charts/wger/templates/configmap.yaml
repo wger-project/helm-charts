@@ -19,9 +19,15 @@ data:
       keepalive 2;
     }
 
+    # if no Host match, close the connection to prevent host spoofing
+    server {
+      listen 80 default_server;
+      return 444;
+    }
+
     # webserver
     server {
-      listen 8080;
+      listen 8080 deferred;
       client_max_body_size 4G;
 
       # set the correct host(s) for your site
@@ -58,17 +64,11 @@ data:
         proxy_buffers 64 4k;
         proxy_max_temp_file_size 0;
 
-        # send 500 when timeout
-        proxy_next_upstream error timeout http_500;
+        # give gunicorn time to process
+        proxy_read_timeout 1800;
 
         proxy_redirect off;
         proxy_pass http://app_server;
-      }
-
-      # error handling
-      error_page 500 502 503 504 /500.html;
-      location = /500.html {
-        root /var/www/html/;
       }
     }
 {{- end }}
