@@ -24,6 +24,9 @@ environment:
     value: "test@test.com"
   - name: EMAIL_BACKEND
     value: "django.core.mail.backends.console.EmailBackend"
+  # Set your name and email to be notified if an internal server error occurs.
+  #- name: DJANGO_ADMINS
+  #  value: "SysAdmin, admin@test.com"
   # django db
   - name: DJANGO_PERFORM_MIGRATIONS
     value: "True"
