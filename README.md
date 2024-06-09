@@ -284,7 +284,7 @@ python3 manage.py axes_reset_username [USERNAME]
 
 To temporary disable privacy mode to see the blocked ip in the log you can login to the container and add the following setting:
 
-```bas
+```bash
 echo "AXES_SENSITIVE_PARAMETERS = []" >>settings.py
 ```
 
