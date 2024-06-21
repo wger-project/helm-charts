@@ -36,7 +36,7 @@ environment:
     value: "{{ .Release.Name }}-postgres"
   - name: DJANGO_DB_PORT
     value: {{ int .Values.postgres.service.port | quote }}
-  # django cache
+  # cache
   - name: DJANGO_CACHE_BACKEND
     value: "django_redis.cache.RedisCache"
   - name: DJANGO_CACHE_LOCATION
@@ -45,6 +45,8 @@ environment:
     value: "django_redis.client.DefaultClient"
   - name: DJANGO_CACHE_TIMEOUT
     value: {{ int .Values.app.django.cache.timeout | default "1296000" | quote }}
+  - name: EXERCISE_CACHE_TTL
+    value: "18000"
   # django general
   {{- if .Values.ingress.enabled }}
   - name: SITE_URL
@@ -103,8 +105,6 @@ environment:
   - name: GUNICORN_CMD_ARGS
     value: "--timeout 240 --workers 4 --worker-class gthread --threads 3 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
   {{- end }}
-  - name: EXERCISE_CACHE_TTL
-    value: "18000"
   # Users won't be able to contribute to exercises if their account age is
   # lower than this amount in days.
   - name: MIN_ACCOUNT_AGE_TO_TRUST
@@ -135,10 +135,6 @@ environment:
     value: {{ .Values.celery.syncVideos | default "True" | quote }}
   - name: DOWNLOAD_INGREDIENTS_FROM
     value: {{ .Values.celery.ingredientsFrom | default "WGER" | quote }}
-  - name: CELERY_BROKER
-    value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-  - name: CELERY_BACKEND
-    value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
   {{- end }}
 {{- end }}
 
