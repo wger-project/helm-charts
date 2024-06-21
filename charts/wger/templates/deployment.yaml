@@ -75,9 +75,9 @@ spec:
                   name: "redis"
                   key: "redis-password"
             - name: CELERY_BROKER
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+              value: "redis://:$${DJANGO_CACHE_CLIENT_PASSWORD}@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+              value: "redis://:$${DJANGO_CACHE_CLIENT_PASSWORD}@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
@@ -250,9 +250,9 @@ spec:
                   name: "redis"
                   key: "redis-password"
             - name: CELERY_BROKER
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+              value: "redis://:$${DJANGO_CACHE_CLIENT_PASSWORD}@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+              value: "redis://:$${DJANGO_CACHE_CLIENT_PASSWORD}@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
@@ -314,9 +314,9 @@ spec:
                   name: "redis"
                   key: "redis-password"
             - name: CELERY_BROKER
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+              value: "redis://:$${DJANGO_CACHE_CLIENT_PASSWORD}@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+              value: "redis://:$${DJANGO_CACHE_CLIENT_PASSWORD}@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             {{- end }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -439,9 +439,9 @@ spec:
                   name: "redis"
                   key: "redis-password"
             - name: CELERY_BROKER
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+              value: "redis://:$${DJANGO_CACHE_CLIENT_PASSWORD}@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+              value: "redis://:$${DJANGO_CACHE_CLIENT_PASSWORD}@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
