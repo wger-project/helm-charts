@@ -135,10 +135,12 @@ environment:
     value: {{ .Values.celery.syncVideos | default "True" | quote }}
   - name: DOWNLOAD_INGREDIENTS_FROM
     value: {{ .Values.celery.ingredientsFrom | default "WGER" | quote }}
+  {{- if not .Values.redis.auth.enabled }}
   - name: CELERY_BROKER
     value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
   - name: CELERY_BACKEND
     value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+  {{- end }}
   {{- end }}
 {{- end }}
 
