@@ -45,10 +45,11 @@ app:
     enabled: false
     image: nginx:stable
     imagePullPolicy: IfNotPresent
+  # django secrets need to be the same used in postgress.secret, otherwise database will fail on migration
   django:
     secret:
-      name: null
-      key: null
+      name: wger
+      key: wger
     cache:
       # in seconds - 60*60*24*15, 15 Days
       timeout: 1296000
