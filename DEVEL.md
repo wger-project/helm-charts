@@ -40,13 +40,13 @@ minikube start --cni calico
 
 Now you have a running cluster on your machine.
 
-Minikube comes with a integrated `kubectl` command. So you can run `kubectl` commands, without downloaded `kubectl` binary:
+Minikube comes with a integrated `kubectl` command. So you can run `kubectl` commands, without a downloaded `kubectl` binary:
 
 ```bash
 minikube kubectl -- get pods -A
 ```
 
-But for using `helm` and our convenience, we install `kubectl` alongside `minikube`:
+But for using `helm` and our convenience, we download `kubectl` alongside `minikube`:
 
 ```bash
 wget "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -O ~/bin/kubectl
@@ -60,7 +60,7 @@ export HELM_INSTALL_DIR=~/bin; export USE_SUDO=false; curl https://raw.githubuse
 
 ## Setup wger
 
-You can install wger without any changes to the `values.yaml`, this will run wger in development mode.
+You can install wger without creating a `your_values.yaml`, this will run wger in development mode.
 
 First clone the `wger-helm-charts` repository and optionally create `your_values.yaml` file:
 
