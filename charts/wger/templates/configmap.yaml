@@ -79,4 +79,4 @@ metadata:
   name: wger-pg-init
 data:
   40-grantSuperuser.sql: |
-    ALTER USER {{ .Values.postgres.userDatabase.name }} WITH SUPERUSER;
+    ALTER USER {{ .Values.postgres.userDatabase.user.value }} WITH SUPERUSER;
