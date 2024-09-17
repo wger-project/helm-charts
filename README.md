@@ -443,57 +443,7 @@ Generally persistent volumes needs to be configured depending on your setup.
 
 ## Developing locally
 
-The following is a basic instruction, for a more in-depth manual please have a look at [DEVEL.md](DEVEL.md). It also covers mounting the wger django code into the container.
-
-In order to develop locally, you will need [minikube](https://minikube.sigs.k8s.io/docs/) installed.
-It sets a local Kubernetes cluster that you can use for testing the Helm chart.
-
-If this is your first time developing a Helm chart, you'd want to try the following:
-
-```bash
-# start minikube
-$ minikube start
-
-# deploy the helm chart from the cloned git repo
-$ cd charts/wger
-$ helm dependency update
-$ helm upgrade --install wger . -n wger --create-namespace -f ../../your_values.yaml
-
-# observe that the pods start correctly
-$ watch kubectl -n wger get pods
-NAME                          READY   STATUS    RESTARTS   AGE
-wger-app-86c65dcbb9-9ftr6     5/5     Running   0          12h
-wger-postgres-0               1/1     Running   0          39h
-wger-redis-65b686bf87-cphzm   1/1     Running   0          39h
-
-# read the logs from the init container (postgres & redis check)
-$ kubectl -n wger logs -f -l app.kubernetes.io/name=wger-app -c init-container
-
-# read the logs from the wger django app
-$ kubectl -n wger logs -f -l app.kubernetes.io/name=wger-app -c wger
-PostgreSQL started :)
-*** Database does not exist, creating one now
-Operations to perform:
-  Apply all migrations: auth, authtoken, config, contenttypes, core, easy_thumbnails, exercises, gallery, gym, mailer, manager, measurements, nutrition, sessions, sites, weight
-Running migrations:
-  Applying contenttypes.0001_initial... OK
-.....
-
-# if you need to debug something in the pods, you can start a shell
-$ export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-app" -o jsonpath="{.items[0].metadata.name}")
-$ kubectl -n wger exec -it $POD -c wger -- bash
-wger@wger-app-86c65dcbb9-9ftr6:~/src$
-
-# start a port forwarding to access the webinterface
-$ echo "wger runs on: http://localhost:10001"
-$ kubectl -n wger port-forward ${POD} 10001:8000
-
-# when you are finished with the testing, stop minikube
-$ minikube stop
-
-# if you'd like to start clean, you can delete the whole cluster
-$ minikube delete
-```
+Please have a look at [DEVEL.md](DEVEL.md).
 
 
 ## Contact

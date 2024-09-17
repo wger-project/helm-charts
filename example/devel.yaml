@@ -1,0 +1,72 @@
+---
+#
+# Development Setup
+# see -> https://https://github.com/wger-project/helm-charts/blob/master/DEVEL.md
+#
+# Have a look at the packaged values.yaml for defaults and more settings:
+#   * https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml
+#
+# App settings
+app:
+  global:
+    replicas: 1
+    # image:
+    #   PullPolicy: IfNotPresent
+  nginx:
+    enabled: true
+  axes:
+    enabled: true
+    failureLimit: 10
+    # in minutes
+    cooloffTime: 30
+    # number of reverse proxies involved
+    ipwareProxyCount: 1
+    # order of magnitude from last proxy for the real ip
+    ipwareMetaPrecedenceOrder: "X_FORWARDED_FOR,REMOTE_ADDR"
+  persistence:
+    enabled: true
+  environment:
+    - name: CSRF_TRUSTED_ORIGINS
+      value: "http://localhost:10001,http://127.0.0.1:10001"
+    - name: GUNICORN_CMD_ARGS
+      value: "--timeout 240 --workers 2 --worker-class gthread --threads 3 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
+
+celery:
+    enabled: true
+
+ingress:
+  enabled: false
+
+postgres:
+  enabled: true
+  settings:
+    superuser:
+      value: postgres
+    superuserPassword:
+      value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  userDatabase:
+    name:
+      value: wger
+    user:
+      value: wger
+    password:
+      value: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  service:
+    port: 5432
+
+redis:
+  enabled: true
+  auth:
+    enabled: true
+  # Additional environment variables (Redis server and Sentinel)
+  env:
+    - name: REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: redis
+          key: redis-password
+  # Arguments for the container entrypoint process (Redis server)
+  args:
+    - "--requirepass $(REDIS_PASSWORD)"
+  service:
+    serverPort: 6379
