@@ -20,7 +20,7 @@ environment:
   - name: EMAIL_HOST_USER
     value: {{ .Values.app.mail.user | quote }}
   - name: FROM_EMAIL
-    value: {{ .Values.app.mail.from | quote }}
+    value: {{ .Values.app.mail.from_mail | quote }}
   - name: EMAIL_BACKEND
     value: {{ .Values.app.mail.backend | default "django.core.mail.backends.console.EmailBackend" | quote }}
     {{- if .Values.app.mail.django_admins }}
