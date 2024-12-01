@@ -85,7 +85,7 @@ app:
     # user: mailuser
     # password: mailuser-password
     
-    # from_mail: "test@test.com"
+    # from_email: "test@test.com"
     # backend: "django.core.mail.backends.console.EmailBackend"
     # don't set django_admins when not needed
     # django_admins:
