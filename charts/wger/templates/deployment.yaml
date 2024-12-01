@@ -64,6 +64,13 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: "mail-password"
+            {{- end }}
             # to enable redis authentication
             # additional settings in the values
             # must be made, passed to the redis
@@ -244,6 +251,13 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: "mail-password"
+            {{- end }}
             # to enable redis authentication
             # additional settings in the values
             # must be made, passed to the redis
@@ -313,6 +327,13 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: "mail-password"
+            {{- end }}
             # to enable redis authentication
             # additional settings in the values
             # must be made, passed to the redis
@@ -443,6 +464,13 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: "mail-password"
+            {{- end }}
             # to enable redis authentication
             # additional settings in the values
             # must be made, passed to the redis

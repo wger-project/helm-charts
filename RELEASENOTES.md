@@ -1,3 +1,15 @@
+## 0.2.1
+
+### Mail settings
+
+* Create a secret for the mail password
+* Manually created secrets can be used with:
+```yaml
+secret:
+  name: yoursecret
+  key: yourkey
+```
+
 ## 0.2.0
 
 * redis upgrade
