@@ -1,14 +1,22 @@
-## 0.2.1
+## 0.2.2
+
+* Every helm upgrade will restart the deployments
 
 ### Mail settings
 
-* Create a secret for the mail password
+* Creates a secret for the mail password
 * Manually created secrets can be used with:
 ```yaml
 secret:
   name: yoursecret
   key: yourkey
 ```
+
+## 0.2.1
+
+* fixes #54 Database migration fails
+* fix celery redis password
+* update development setup
 
 ## 0.2.0
 

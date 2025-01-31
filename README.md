@@ -5,23 +5,6 @@ Helm charts for wger deployment on Kubernetes.
 * https://wger.readthedocs.io
 
 
-## TL;DR
-
-If you know what you are doing, you can go ahead and run these commands to install wger. Otherwise, keep on reading!
-
-```bash
-helm repo add github-wger https://wger-project.github.io/helm-charts
-
-helm upgrade \
-  --install wger github-wger/wger \
-  --version 0.1.5 \
-  -n wger \
-  --create-namespace
-```
-
-This will install the chart with the defaults, stated in [values.yaml](https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml). 
-
-
 ## Introduction
 
 This chart bootstraps a wger deployment on a Kubernetes cluster using the Helm package manager, alongside with a PostgreSQL for a database and Redis as a caching service.
@@ -54,6 +37,8 @@ helm upgrade \
 
 First you may want to make a copy of [values.yaml](https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml) and modify it for your needs.
 
+There are some examples of the `values.yaml` in the [example folder](https://github.com/wger-project/helm-charts/blob/master/example/).
+
 Please see the [parameters section](#parameters).
 
 
@@ -76,6 +61,21 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.global.securityContext` | Pod security context | Object | see [values.yaml](charts/wger/values.yaml)	|
 
 
+### Mail
+
+| Name | Description | Type | Default Value |
+|------|-------------|------|---------------|
+| `app.mail.enabled` | Enable mail client configuration | Boolean | `false` |
+| `app.mail.server` | Mailserver | String | `null` |
+| `app.mail.port` | Mailserver Port | String | `587` |
+| `app.mail.user` | Mailserver User | String | `null` |
+| `app.mail.from_email` | From Email Address | String | `null` |
+| `app.mail.secret.name` | Name of the secret for the mail password | String | `mail` |
+| `app.mail.secret.key` | Key in the secret used for the mail password | String | `mail-password` |
+| `app.mail.secret.update` | Enable or disable changes to the secret with the values | Boolean | `false` |
+| `app.mail.django_admins` | Django admins to receive internal server error, don't enable it when not needed | String | `null` |
+
+
 ### Django
 
 | Name | Description | Type | Default Value |
@@ -85,7 +85,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.django.cache.timeout` | Cache timeout in seconds | String | `1296000` |
 
 
-#### Celery
+### Celery
 
 Celery requires persistent volumes.
 
@@ -105,7 +105,7 @@ Celery requires persistent volumes.
 | `celery.flower.secret.password` | Password for the webinterface   | String | `randAlphaNum 50` |
 
 
-### SimpleJWT
+## SimpleJWT
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -115,7 +115,7 @@ Celery requires persistent volumes.
 | `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours | String | `24` |
 
 
-### Axes
+## Axes
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -127,7 +127,7 @@ Celery requires persistent volumes.
 | `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | List (comma separated string) | `"HTTP_X_FORWARDED_FOR,REMOTE_ADDR"` |
 
 
-### Nginx
+## Nginx
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -136,7 +136,7 @@ Celery requires persistent volumes.
 | `app.nginx.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
 
 
-### Ingress
+## Ingress
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -147,7 +147,7 @@ Celery requires persistent volumes.
 | `ingress.annotations` | Annotations to attach to the ingress | Dictionary | `{}` |
 
 
-### Service
+## Service
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -156,7 +156,7 @@ Celery requires persistent volumes.
 | `service.annotations` | Annotations to attach to the service | Dictionary | `{}` |
 
 
-### Persistence
+## Persistence
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -171,7 +171,7 @@ Celery requires persistent volumes.
 | `app.persistence.enabled` | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
 
 
-### Application Resources
+## Application Resources
 
 | Name | Description | Type | Default Value |
 |------|-------------|------|---------------|
@@ -325,7 +325,7 @@ kubectl -n wger exec -ti $POD -c postgres -- bash
 pg_dumpall --clean --username wger -f /var/lib/postgresql/data/dump.sql
 ```
 
-If you however missed that, you need to know which postgres version you where running before, stop the current postgres and wger app.
+If you however missed that, you need to know which postgres version you where running before. First stop the current postgres and wger app.
 
 ```bash
 # stop the current wger deployment
