@@ -6,12 +6,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
-  {{- with .Values.app.global.annotations }}
-  annotations:
-  {{- range $key, $value := . }}
-    {{ $key }}: {{ $value | quote}}
-  {{- end }}
-  {{- end }}
 spec:
   replicas: {{ .Values.app.global.replicas }}
   selector:
@@ -21,8 +15,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-app
-    {{- with .Values.app.global.annotations }}
       annotations:
+        # every helm upgrade restarts the deployment
+        rollme: {{ randAlphaNum 5 | quote }}
+      {{- with .Values.app.global.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
       {{- end }}
@@ -64,6 +60,13 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: {{ .Values.app.mail.secret.key | default "mail-password" | quote }}
+            {{- end }}
             # to enable redis authentication
             # additional settings in the values
             # must be made, passed to the redis
@@ -175,10 +178,10 @@ spec:
             name: {{ .Release.Name }}-nginx-configmap
         {{- end }}
       {{- end }}
----
 {{- if .Values.celery.enabled }}
 # celery only works with persistence enabled
 {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -186,12 +189,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
-  {{- with .Values.celery.annotations }}
-  annotations:
-  {{- range $key, $value := . }}
-    {{ $key }}: {{ $value | quote}}
-  {{- end }}
-  {{- end }}
 spec:
   replicas: {{ .Values.celery.replicas }}
   selector:
@@ -201,8 +198,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-celery
-    {{- with .Values.celery.annotations }}
       annotations:
+        # every helm upgrade restarts the deployment
+        rollme: {{ randAlphaNum 5 | quote }}
+      {{- with .Values.celery.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
       {{- end }}
@@ -244,6 +243,13 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: {{ .Values.app.mail.secret.key | default "mail-password" | quote }}
+            {{- end }}
             # to enable redis authentication
             # additional settings in the values
             # must be made, passed to the redis
@@ -313,6 +319,13 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: {{ .Values.app.mail.secret.key | default "mail-password" | quote }}
+            {{- end }}
             # to enable redis authentication
             # additional settings in the values
             # must be made, passed to the redis
@@ -387,6 +400,8 @@ metadata:
     app.kubernetes.io/name: {{ .Release.Name }}
   {{- with .Values.celery.annotations }}
   annotations:
+    # every helm upgrade restarts the deployment
+      rollme: {{ randAlphaNum 5 | quote }}
   {{- range $key, $value := . }}
     {{ $key }}: {{ $value | quote}}
   {{- end }}
@@ -400,8 +415,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-celery-worker
-    {{- with .Values.celery.annotations }}
       annotations:
+        # every helm upgrade restarts the deployment
+        rollme: {{ randAlphaNum 5 | quote }}
+      {{- with .Values.celery.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
       {{- end }}
@@ -443,6 +460,13 @@ spec:
                 secretKeyRef:
                   name: "{{.Release.Name}}-postgres"
                   key: "POSTGRES_DB"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: {{ .Values.app.mail.secret.key | default "mail-password" | quote }}
+            {{- end }}
             # to enable redis authentication
             # additional settings in the values
             # must be made, passed to the redis

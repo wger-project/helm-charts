@@ -6,7 +6,7 @@ The following is done on a Fedora Desktop to run a minikube rootless setup. For 
 
 The network namespace of the Node components has to have a non-loopback interface, which can be for example configured with slirp4netns, VPNKit, or lxc-user-nic(1).
 
-Let's install the network component `slirp4netns`
+Let's install the network component `slirp4netns`, from podman >5.0 `pasta` is used and installed as a default, it is still configurable to use `slirp4netns`, but you may not need it.
 
 ```bash
 sudo dnf install slirp4netns

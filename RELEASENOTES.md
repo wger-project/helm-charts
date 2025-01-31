@@ -1,3 +1,27 @@
+## 0.2.2
+
+* Every helm upgrade will restart the deployments
+* Create/Update secrets in pre-* hooks
+
+### Mail settings
+
+* Values to setup the mail configuration
+* Creates a new secret for the mail password
+* Manually created secrets can be used with:
+```yaml
+app:
+  mail:
+    secret:
+      name: yoursecret
+      key: yourkey
+```
+
+## 0.2.1
+
+* fixes #54 Database migration fails
+* fix celery redis password
+* update development setup
+
 ## 0.2.0
 
 * redis upgrade

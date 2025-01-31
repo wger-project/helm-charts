@@ -1,4 +1,3 @@
----
 # App settings
 app:
   # The server's timezone, for a list of possible names:
@@ -75,9 +74,23 @@ app:
     ipwareProxyCount: 0
     # order of magnitude from last proxy for the real ip
     ipwareMetaPrecedenceOrder: "HTTP_X_FORWARDED_FOR,REMOTE_ADDR"
+  mail:
+    enabled: false
+    server: null
+    port: null
+    user: null
+    from_email: null
+    # Set your name and email to be notified if an internal server error occurs.
+    # don't set django_admins when not needed
+    django_admins: null
+    secret:
+      name: mail
+      key: mail-password
+      password: null
+      update: false
 
-#
-# celery synchronisation
+# celery tasks
+# https://wger.readthedocs.io/en/latest/celery.html
 celery:
   enabled: false
   annotations: {}

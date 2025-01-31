@@ -10,23 +10,25 @@ environment:
   - name: TIME_ZONE
     value: {{ .Values.app.timezone | default "UTC" | quote }}
   # email settings
+  {{- if .Values.app.mail.enabled }}
+  - name: ENABLE_EMAIL
+    value: "True"
+  - name: EMAIL_HOST
+    value: {{ .Values.app.mail.server | quote }}
+  - name: EMAIL_PORT
+    value: {{ .Values.app.mail.port | default "587" | quote }}
+  - name: EMAIL_HOST_USER
+    value: {{ .Values.app.mail.user | quote }}
+  - name: FROM_EMAIL
+    value: {{ .Values.app.mail.from_email | quote }}
+    {{- if .Values.app.mail.django_admins }}
+  - name: DJANGO_ADMINS
+    value: {{ .Values.app.mail.django_admins | quote }}
+    {{- end }}
+  {{- else }}
   - name: ENABLE_EMAIL
     value: "False"
-  - name: EMAIL_HOST
-    value: None
-  - name: EMAIL_PORT
-    value: "587"
-  - name: EMAIL_HOST_USER
-    value: None
-  - name: EMAIL_HOST_PASSWORD
-    value: None
-  - name: FROM_EMAIL
-    value: "test@test.com"
-  - name: EMAIL_BACKEND
-    value: "django.core.mail.backends.console.EmailBackend"
-  # Set your name and email to be notified if an internal server error occurs.
-  #- name: DJANGO_ADMINS
-  #  value: "SysAdmin, admin@test.com"
+  {{- end }}
   # django db
   - name: DJANGO_PERFORM_MIGRATIONS
     value: "True"
@@ -61,13 +63,12 @@ environment:
   - name: CSRF_TRUSTED_ORIGINS
     value: "http://127.0.0.1,https://127.0.0.1,http://localhost,https://localhost"
   {{- end }}
-  {{- if .Values.app.nginx.enabled }}
   - name: DJANGO_DEBUG
+    {{- if .Values.app.nginx.enabled }}
     value: "False"
-  {{- else }}
-  - name: DJANGO_DEBUG
+    {{- else }}
     value: "True"
-  {{- end }}
+    {{- end }}
   - name: DJANGO_MEDIA_ROOT
     value: "/home/wger/media"
   # axes
