@@ -20,6 +20,13 @@ app:
     replicas: 1
     # image:
     #   PullPolicy: IfNotPresent
+  mail:
+    enabled: true
+    server: mail.example.com
+    user: wger@example.com
+    from_email: "wger@example.com"
+    secret:
+      password: XXXXXXXXXXXXXXXXXXXXXXX
   nginx:
     enabled: true
   axes:
@@ -39,18 +46,6 @@ app:
       static: wger-static
       celeryBeat: wger-celery-beat
   environment:
-    - name: ENABLE_EMAIL
-      value: "True"
-    - name: EMAIL_HOST
-      value: "mail.example.com"
-    - name: EMAIL_HOST_USER
-      value: "fit@example.com"
-    - name: EMAIL_HOST_PASSWORD
-      value: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    - name: FROM_EMAIL
-      value: "fit@example.com"
-    - name: DJANGO_ADMINS
-      value: "SysAdmin, admin@test.com"
     - name: GUNICORN_CMD_ARGS
       value: "--timeout 240 --workers 2 --worker-class gthread --threads 3 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
 

@@ -76,19 +76,18 @@ app:
     ipwareMetaPrecedenceOrder: "HTTP_X_FORWARDED_FOR,REMOTE_ADDR"
   mail:
     enabled: false
+    server: null
+    port: null
+    user: null
+    from_email: null
+    # Set your name and email to be notified if an internal server error occurs.
+    # don't set django_admins when not needed
+    django_admins: null
     secret:
       name: mail
       key: mail-password
-      # update: false
-    # server: mail.host.local
-    # port: 587
-    # user: mailuser
-    # password: mailuser-password
-    
-    # from_email: "test@test.com"
-    # backend: "django.core.mail.backends.console.EmailBackend"
-    # don't set django_admins when not needed
-    # django_admins:
+      password: null
+      update: false
 
 # celery tasks
 # https://wger.readthedocs.io/en/latest/celery.html

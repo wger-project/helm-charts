@@ -8,6 +8,14 @@
 #
 # App settings
 app:
+  mail:
+    enabled: true
+    server: mail.example.com
+    user: wger@example.com
+    from_email: "wger@example.com"
+    secret:
+      password: XXXXXXXXXXXXXXXXXXXXXXX
+      update: true
   global:
     replicas: 1
     # image:

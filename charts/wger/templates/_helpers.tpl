@@ -21,13 +21,9 @@ environment:
     value: {{ .Values.app.mail.user | quote }}
   - name: FROM_EMAIL
     value: {{ .Values.app.mail.from_email | quote }}
-  - name: EMAIL_BACKEND
-    value: {{ .Values.app.mail.backend | default "django.core.mail.backends.console.EmailBackend" | quote }}
     {{- if .Values.app.mail.django_admins }}
-    # Set your name and email to be notified if an internal server error occurs.
-    # not set when not used
   - name: DJANGO_ADMINS
-    value: {{ .Values.app.mail.backend | default "SysAdmin, root@localhost" | quote }}
+    value: {{ .Values.app.mail.django_admins | quote }}
     {{- end }}
   {{- else }}
   - name: ENABLE_EMAIL
