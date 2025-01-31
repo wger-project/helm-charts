@@ -1,15 +1,19 @@
 ## 0.2.2
 
 * Every helm upgrade will restart the deployments
+* Create/Update secrets in pre-* hooks
 
 ### Mail settings
 
-* Creates a secret for the mail password
+* Values to setup the mail configuration
+* Creates a new secret for the mail password
 * Manually created secrets can be used with:
 ```yaml
-secret:
-  name: yoursecret
-  key: yourkey
+app:
+  mail:
+    secret:
+      name: yoursecret
+      key: yourkey
 ```
 
 ## 0.2.1
