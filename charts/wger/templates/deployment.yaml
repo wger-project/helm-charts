@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,7 +17,7 @@ spec:
       annotations:
         # every helm upgrade restarts the deployment
         rollme: {{ randAlphaNum 5 | quote }}
-      {{- with .Values.app.global.annotations }}
+    {{- with .Values.app.global.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
       {{- end }}
@@ -86,7 +85,7 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }}
+            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -121,7 +120,7 @@ spec:
               mountPath: /home/wger/beat
               readOnly: false
             {{- end }}
-          {{- end }}
+          {{- end }} # {{/*- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) */}}
         # nginx container
         {{- if .Values.app.nginx.enabled }}
         - name: nginx
@@ -145,7 +144,7 @@ spec:
           resources:
             requests:
               cpu: 10m
-        {{- end }}
+        {{- end }} # {{/*- if .Values.app.nginx.enabled */}}
       initContainers:
         - name: init-container
           image: docker.io/busybox:latest
@@ -177,7 +176,7 @@ spec:
           configMap:
             name: {{ .Release.Name }}-nginx-configmap
         {{- end }}
-      {{- end }}
+      {{- end }} # {{/*- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) */}}
 {{- if .Values.celery.enabled }}
 # celery only works with persistence enabled
 {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
@@ -201,7 +200,7 @@ spec:
       annotations:
         # every helm upgrade restarts the deployment
         rollme: {{ randAlphaNum 5 | quote }}
-      {{- with .Values.celery.annotations }}
+    {{- with .Values.celery.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
       {{- end }}
@@ -269,7 +268,7 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }}
+            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -345,7 +344,7 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }}
+            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -360,16 +359,16 @@ spec:
               mountPath: /home/wger/src
               readOnly: false
             {{- end }}
+        {{- end }} # {{/*- if .Values.celery.flower.enabled */}}
       initContainers:
-      - name: init-container
-        image: docker.io/busybox:latest
-        command:
-          - /bin/sh
-          - -c
-          - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
-            until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
-            until wget --spider http://{{.Release.Name}}-http:8000; do echo "Waiting for wger app service ({{.Release.Name}}-http:8000)"; sleep 2; done
-        {{- end }}
+        - name: init-container
+          image: docker.io/busybox:latest
+          command:
+            - /bin/sh
+            - -c
+            - until nc -zvw10 {{ .Release.Name }}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{ .Release.Name }}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
+              until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
+              until wget --spider http://{{ .Release.Name }}-http:8000; do echo "Waiting for wger app service ({{ .Release.Name }}-http:8000)"; sleep 2; done
       volumes:
         - name: wger-media
           persistentVolumeClaim:
@@ -377,11 +376,11 @@ spec:
         - name: wger-static
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
-          {{- if .Values.app.persistence.existingClaim.code }}
+        {{- if .Values.app.persistence.existingClaim.code }}
         - name: wger-code
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
-          {{- end }}
+        {{- end }}
         - name: wger-celery-beat
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
@@ -402,9 +401,9 @@ metadata:
   annotations:
     # every helm upgrade restarts the deployment
       rollme: {{ randAlphaNum 5 | quote }}
-  {{- range $key, $value := . }}
-    {{ $key }}: {{ $value | quote}}
-  {{- end }}
+    {{- range $key, $value := . }}
+      {{ $key }}: {{ $value | quote}}
+    {{- end }}
   {{- end }}
 spec:
   replicas: {{ .Values.celery.replicasWorker }}
@@ -418,7 +417,7 @@ spec:
       annotations:
         # every helm upgrade restarts the deployment
         rollme: {{ randAlphaNum 5 | quote }}
-      {{- with .Values.celery.annotations }}
+    {{- with .Values.celery.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
       {{- end }}
@@ -486,7 +485,7 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }}
+            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -499,6 +498,7 @@ spec:
             - name: wger-media
               mountPath: /home/wger/media
               readOnly: false
+            # special mount to override the wger code from the container
             {{- if .Values.app.persistence.existingClaim.code }}
             - name: wger-code
               mountPath: /home/wger/src
@@ -534,5 +534,5 @@ spec:
             name: {{ .Release.Name }}-nginx-configmap
         {{- end }}
 ---
-{{- end }}
-{{- end }}
+{{- end }} # {{/*- if .Values.celery.enabled */}}
+{{- end }} # {{/*- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) */}}
