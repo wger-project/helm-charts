@@ -2,7 +2,9 @@
 
 * fix initContainer when flower is not enabled
 * add NOTES.txt
+* move README.md and LICENSE into package
 * add wger icon
+* add to https://artifacthub.io
 
 ## 0.2.2
 
