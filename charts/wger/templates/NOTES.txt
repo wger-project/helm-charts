@@ -1,0 +1,14 @@
+
+Starting the container may take some time, you can watch the process in the logs:
+
+kubectl -n {{ .Release.Namespace }} logs -f -l app.kubernetes.io/name={{ .Release.Name }}-app -c init-container
+kubectl -n {{ .Release.Namespace }} logs -f -l app.kubernetes.io/name={{ .Release.Name }}-app -c wger
+
+Get the postgres superuser passwords:
+
+kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-postgres -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d
+
+Get the postgres user passwords:
+
+kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-postgres -o jsonpath='{.data.USERDB_PASSWORD}' | base64 -d
+

@@ -1,3 +1,9 @@
+## 0.2.3
+
+* fix initContainer when flower is not enabled
+* add NOTES.txt
+* add wger icon
+
 ## 0.2.2
 
 * Every helm upgrade will restart the deployments
