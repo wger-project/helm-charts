@@ -44,21 +44,39 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
+          {{- if .Values.app.django.existingDatabase.enabled }}
             - name: DJANGO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
+            - name: DJANGO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
+            - name: DJANGO_DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+          {{- else }}
+            - name: DJANGO_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{.Release.Name}}-postgres
                   key: "USERDB_USER"
             - name: DJANGO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
+                  name: {{.Release.Name}}-postgres
                   key: "USERDB_PASSWORD"
             - name: DJANGO_DB_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
-                  key: "POSTGRES_DB"
+                  name: {{.Release.Name}}-postgres
+                  key: "USERDB_NAME"
+          {{- end }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -227,21 +245,39 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
+          {{- if .Values.app.django.existingDatabase.enabled }}
             - name: DJANGO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
+            - name: DJANGO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
+            - name: DJANGO_DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+          {{- else }}
+            - name: DJANGO_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{.Release.Name}}-postgres
                   key: "USERDB_USER"
             - name: DJANGO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
+                  name: {{.Release.Name}}-postgres
                   key: "USERDB_PASSWORD"
             - name: DJANGO_DB_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
-                  key: "POSTGRES_DB"
+                  name: {{.Release.Name}}-postgres
+                  key: "USERDB_NAME"
+          {{- end }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -303,21 +339,39 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
+          {{- if .Values.app.django.existingDatabase.enabled }}
             - name: DJANGO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
+            - name: DJANGO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
+            - name: DJANGO_DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+          {{- else }}
+            - name: DJANGO_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{.Release.Name}}-postgres
                   key: "USERDB_USER"
             - name: DJANGO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
+                  name: {{.Release.Name}}-postgres
                   key: "USERDB_PASSWORD"
             - name: DJANGO_DB_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
-                  key: "POSTGRES_DB"
+                  name: {{.Release.Name}}-postgres
+                  key: "USERDB_NAME"
+          {{- end }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -444,21 +498,39 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
+          {{- if .Values.app.django.existingDatabase.enabled }}
             - name: DJANGO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
+            - name: DJANGO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
+            - name: DJANGO_DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
+                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+          {{- else }}
+            - name: DJANGO_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{.Release.Name}}-postgres
                   key: "USERDB_USER"
             - name: DJANGO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
+                  name: {{.Release.Name}}-postgres
                   key: "USERDB_PASSWORD"
             - name: DJANGO_DB_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: "{{.Release.Name}}-postgres"
-                  key: "POSTGRES_DB"
+                  name: {{.Release.Name}}-postgres
+                  key: "USERDB_NAME"
+          {{- end }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:

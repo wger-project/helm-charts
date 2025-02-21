@@ -83,7 +83,17 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.django.secret.name` | Name of the secret | String | `django` |
 | `app.django.secret.key` | Key for the `SECRET_KEY` | String | `randAlphaNum 50` |
 | `app.django.cache.timeout` | Cache timeout in seconds | String | `1296000` |
-
+| `app.django.existingDatabase.enabled` | Enable existing database, you need to set `postgres.enabled: false` | Boolean | `false` |
+| `app.django.existingDatabase.engine` | Set database engine | String | `django.db.backends.postgresql` |
+| `app.django.existingDatabase.host` | Database hostname | String | `{{ .Release.Name }}-postgres` |
+| `app.django.existingDatabase.port` | Database port | Integer | `postgres.service.port` |
+| `app.django.existingDatabase.dbname` | Name of the database | String | `wger` |
+| `app.django.existingDatabase.dbuser` | Database User |String | `wger` |
+| `app.django.existingDatabase.dbpw` | Database Password | String | `null` |
+| `app.django.existingDatabase.existingSecret.name` | Name of a existing secret. If you like to use this for the database credentials | String | `null` |
+| `app.django.existingDatabase.existingSecret.dbnameKey` | Key containing the database name | String | `null` |
+| `app.django.existingDatabase.existingSecret.dbuserKey` | Key containing the database user | String | `null` |
+| `app.django.existingDatabase.existingSecret.dbpwKey` | Key containing the database password | String | `null` |
 
 ### Celery
 

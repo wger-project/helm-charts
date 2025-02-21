@@ -33,11 +33,11 @@ environment:
   - name: DJANGO_PERFORM_MIGRATIONS
     value: "True"
   - name: DJANGO_DB_ENGINE
-    value: "django.db.backends.postgresql"
+    value: {{ .Values.app.django.existingDatabase.engine | default "django.db.backends.postgresql" | quote }}
   - name: DJANGO_DB_HOST
-    value: "{{ .Release.Name }}-postgres"
+    value: {{ .Values.app.django.existingDatabase.host | default "{{ .Release.Name }}-postgres" | quote }}
   - name: DJANGO_DB_PORT
-    value: {{ int .Values.postgres.service.port | quote }}
+    value: {{ int .Values.app.django.existingDatabase.port | default int .Values.postgres.service.port | quote }}
   # cache
   - name: DJANGO_CACHE_BACKEND
     value: "django_redis.cache.RedisCache"
