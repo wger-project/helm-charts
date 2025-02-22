@@ -35,7 +35,7 @@ environment:
   - name: DJANGO_DB_ENGINE
     value: {{ .Values.app.django.existingDatabase.engine | default "django.db.backends.postgresql" | quote }}
   - name: DJANGO_DB_HOST
-    value: {{ .Values.app.django.existingDatabase.host | default "{{ .Release.Name }}-postgres" | quote }}
+    value: {{ .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
   - name: DJANGO_DB_PORT
     value: {{ .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
   # cache
@@ -194,7 +194,7 @@ environment:
     - name: DJANGO_DB_USER
       valueFrom:
         secretKeyRef:
-          name: {{.Release.Name}}-postgres
+          name:  {{.Release.Name}}-postgres
           key: "USERDB_USER"
     - name: DJANGO_DB_PASSWORD
       valueFrom:
@@ -205,7 +205,7 @@ environment:
       valueFrom:
         secretKeyRef:
           name: {{.Release.Name}}-postgres
-          key: "USERDB_NAME"
+          key: "POSTGRES_DB"
   {{- end }}
 {{- end }}
 {{/*
