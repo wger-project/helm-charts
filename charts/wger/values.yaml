@@ -77,7 +77,7 @@ app:
         dbuserKey: null
         # overrides app.django.existingDatabase.dbpw
         dbpwKey: null
-        
+
   #
   # JWT auth
   jwt:
