@@ -34,6 +34,7 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
+            {{- include "database.settings" . | indent 8 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -44,39 +45,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
-          {{- if .Values.app.django.existingDatabase.enabled }}
-            - name: DJANGO_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
-            - name: DJANGO_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
-            - name: DJANGO_DB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
-          {{- else }}
-            - name: DJANGO_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_USER"
-            - name: DJANGO_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_PASSWORD"
-            - name: DJANGO_DB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_NAME"
-          {{- end }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -167,10 +135,7 @@ spec:
         - name: init-container
           image: docker.io/busybox:latest
           command:
-            - /bin/sh
-            - -c
-            - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
-              until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
+          {{- include "initContainer.pgonly.command" . | indent 10 }}
       {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
       volumes:
         - name: wger-media
@@ -235,6 +200,7 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
+            {{- include "database.settings" . | indent 8 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -245,39 +211,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
-          {{- if .Values.app.django.existingDatabase.enabled }}
-            - name: DJANGO_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
-            - name: DJANGO_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
-            - name: DJANGO_DB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
-          {{- else }}
-            - name: DJANGO_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_USER"
-            - name: DJANGO_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_PASSWORD"
-            - name: DJANGO_DB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_NAME"
-          {{- end }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -329,6 +262,7 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
+            {{- include "database.settings" . | indent 8 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -339,39 +273,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
-          {{- if .Values.app.django.existingDatabase.enabled }}
-            - name: DJANGO_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
-            - name: DJANGO_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
-            - name: DJANGO_DB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
-          {{- else }}
-            - name: DJANGO_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_USER"
-            - name: DJANGO_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_PASSWORD"
-            - name: DJANGO_DB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_NAME"
-          {{- end }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -418,11 +319,7 @@ spec:
         - name: init-container
           image: docker.io/busybox:latest
           command:
-            - /bin/sh
-            - -c
-            - until nc -zvw10 {{ .Release.Name }}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{ .Release.Name }}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
-              until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
-              until wget --spider http://{{ .Release.Name }}-http:8000; do echo "Waiting for wger app service ({{ .Release.Name }}-http:8000)"; sleep 2; done
+          {{- include "initContainer.web.command" . | indent 10 }}
       volumes:
         - name: wger-media
           persistentVolumeClaim:
@@ -488,6 +385,7 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
+            {{- include "database.settings" . | indent 8 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -498,39 +396,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
                   key: "signing-key"
-          {{- if .Values.app.django.existingDatabase.enabled }}
-            - name: DJANGO_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
-            - name: DJANGO_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
-            - name: DJANGO_DB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.existingDatabase.existingSecret.name | default "{{.Release.Name}}-existing-database" | quote }}
-                  key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
-          {{- else }}
-            - name: DJANGO_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_USER"
-            - name: DJANGO_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_PASSWORD"
-            - name: DJANGO_DB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{.Release.Name}}-postgres
-                  key: "USERDB_NAME"
-          {{- end }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -580,11 +445,7 @@ spec:
       - name: init-container
         image: docker.io/busybox:latest
         command:
-          - /bin/sh
-          - -c
-          - until nc -zvw10 {{.Release.Name}}-postgres {{ .Values.postgres.service.port }}; do echo "Waiting for postgres service ({{.Release.Name}}-postgres:{{ .Values.postgres.service.port }}) "; sleep 2; done &&
-            until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
-            until wget --spider http://{{.Release.Name}}-http:8000; do echo "Waiting for wger app service ({{.Release.Name}}-http:8000)"; sleep 2; done
+        {{- include "initContainer.web.command" . | indent 10 }}
       volumes:
         - name: wger-media
           persistentVolumeClaim:
