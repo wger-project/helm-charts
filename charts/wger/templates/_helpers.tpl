@@ -33,11 +33,11 @@ environment:
   - name: DJANGO_PERFORM_MIGRATIONS
     value: "True"
   - name: DJANGO_DB_ENGINE
-    value: "django.db.backends.postgresql"
+    value: {{ .Values.app.django.existingDatabase.engine | default "django.db.backends.postgresql" | quote }}
   - name: DJANGO_DB_HOST
-    value: "{{ .Release.Name }}-postgres"
+    value: {{ .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
   - name: DJANGO_DB_PORT
-    value: {{ int .Values.postgres.service.port | quote }}
+    value: {{ .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
   # cache
   - name: DJANGO_CACHE_BACKEND
     value: "django_redis.cache.RedisCache"
@@ -168,4 +168,68 @@ environment:
 - name: {{ .name }}
   value: {{ .value | quote }}
 {{- end }}
+{{- end }}
+{{/*
+ database settings
+ used for wger-app and celery containers
+*/}}
+{{- define "database.settings" }}
+  {{- if .Values.app.django.existingDatabase.enabled }}
+    - name: DJANGO_DB_USER
+      valueFrom:
+        secretKeyRef:
+          name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
+          key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
+    - name: DJANGO_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
+          key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
+    - name: DJANGO_DB_DATABASE
+      valueFrom:
+        secretKeyRef:
+          name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
+          key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+  {{- else }}
+    - name: DJANGO_DB_USER
+      valueFrom:
+        secretKeyRef:
+          name:  {{.Release.Name}}-postgres
+          key: "USERDB_USER"
+    - name: DJANGO_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: {{.Release.Name}}-postgres
+          key: "USERDB_PASSWORD"
+    - name: DJANGO_DB_DATABASE
+      valueFrom:
+        secretKeyRef:
+          name: {{.Release.Name}}-postgres
+          key: "POSTGRES_DB"
+  {{- end }}
+{{- end }}
+{{/*
+ initContainer postgres command
+ used for wger-app and celery containers
+*/}}
+{{- define "initContainer.pgonly.command" }}
+{{- $dbhost := .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
+{{- $dbport := .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
+- /bin/sh
+- -c
+- until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done &&
+  until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
+{{- end }}
+{{/*
+ initContainer web command
+ used for celery containers
+*/}}
+{{- define "initContainer.web.command" }}
+{{- $dbhost := .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
+{{- $dbport := .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
+- /bin/sh
+- -c
+- until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done &&
+  until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
+  until wget --spider http://{{ .Release.Name }}-http:8000; do echo "Waiting for wger app service ({{ .Release.Name }}-http:8000)"; sleep 2; done
 {{- end }}

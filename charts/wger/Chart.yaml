@@ -1,6 +1,6 @@
 ---
 apiVersion: v2
-version: 0.2.3
+version: 0.2.4-rc.1
 appVersion: latest
 name: wger
 description: A Helm chart for wger installation on Kubernetes
@@ -15,11 +15,11 @@ dependencies:
     condition: postgres.enabled
     tags:
       - groundhog2k
-    version: 1.3.1
+    version: 1.3.5
     repository: https://groundhog2k.github.io/helm-charts
   - name: redis
     condition: redis.enabled
     tags:
       - groundhog2k
-    version: 1.2.0
+    version: 1.3.3
     repository: https://groundhog2k.github.io/helm-charts

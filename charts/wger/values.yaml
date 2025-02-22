@@ -51,6 +51,33 @@ app:
     cache:
       # in seconds - 60*60*24*15, 15 Days
       timeout: 1296000
+    # for existing databases use the following settings
+    # you need to set `postgres.enabled: false` as well
+    existingDatabase:
+      enabled: false
+      # set DJANGO_DB_ENGINE
+      engine: null
+      # set DJANGO_DB_HOST
+      host: null
+      # set DJANGO_DB_PORT
+      port: null
+      # set DJANGO_DB_DATABASE
+      dbname: wger
+      # set DJANGO_DB_USER
+      dbuser: wger
+      # set DJANGO_DB_PASSWORD
+      dbpw: null
+      # existing secret key containing database credentials
+      existingSecret:
+        # name of the secret
+        name: null
+        # overrides app.django.existingDatabase.dbname
+        dbnameKey: null
+        # overrides app.django.existingDatabase.dbuser
+        dbuserKey: null
+        # overrides app.django.existingDatabase.dbpw
+        dbpwKey: null
+
   #
   # JWT auth
   jwt:
@@ -185,6 +212,7 @@ redis:
     # one upon first installation
     # password: XXXXXXXXXXXXXXXXXX
   # Uncomment the following to enable password authentication:
+  #
   # # Additional environment variables (Redis server and Sentinel)
   # env:
   #   - name: REDIS_PASSWORD
