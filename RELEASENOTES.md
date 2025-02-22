@@ -1,8 +1,10 @@
 ## 0.2.4
 
 * support existing database
-  * credentials in the values.yaml
+  * credentials in the `values.yaml`
   * credentials in a existing secret
+* minor upgrade postgres
+* minor upgrade redis
 
 ## 0.2.3
 
