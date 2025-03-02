@@ -185,11 +185,16 @@ environment:
         secretKeyRef:
           name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
           key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
+    {{- if .Values.app.django.existingDatabase.existingSecret.dbnameKey }}
     - name: DJANGO_DB_DATABASE
       valueFrom:
         secretKeyRef:
           name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
           key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+    {{- else }}
+    - name: DJANGO_DB_DATABASE
+      value: {{ .Values.app.django.existingDatabase.dbname | default "wger" | quote }}
+    {{- end }}
   {{- else }}
     - name: DJANGO_DB_USER
       valueFrom:

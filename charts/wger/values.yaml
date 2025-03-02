@@ -55,6 +55,7 @@ app:
     # you need to set `postgres.enabled: false` as well
     # the credentials will be saved in a new secret
     # {{ .Release.Name}}-existing-database
+    # except you use a existingSecret
     existingDatabase:
       enabled: false
       engine: null
@@ -63,13 +64,15 @@ app:
       dbname: wger
       dbuser: wger
       dbpw: null
-      # optionally use a existing secret key containing database credentials
+      # optionally use a existing secret containing the database credentials
       # if you don't set a *Key it will look for the following keys
       # USERDB_USER / USERDB_PASSWORD / USERDB_NAME
+      # in the secret
       existingSecret:
         # name of the secret
         name: null
         # overrides app.django.existingDatabase.dbname
+        # optional; defaults to app.django.existingDatabase.dbname / "wger"
         dbnameKey: null
         # overrides app.django.existingDatabase.dbuser
         dbuserKey: null

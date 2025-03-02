@@ -91,7 +91,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.django.existingDatabase.dbuser` | Database User |String | `wger` |
 | `app.django.existingDatabase.dbpw` | Database Password | String | `null` |
 | `app.django.existingDatabase.existingSecret.name` | Name of a existing secret. If you like to use this for the database credentials | String | `null` |
-| `app.django.existingDatabase.existingSecret.dbnameKey` | Key containing the database name | String | `null` |
+| `app.django.existingDatabase.existingSecret.dbnameKey` | Key containing the database name. Optional; will take `app.django.existingDatabase.dbname` if not set | String | `null` |
 | `app.django.existingDatabase.existingSecret.dbuserKey` | Key containing the database user | String | `null` |
 | `app.django.existingDatabase.existingSecret.dbpwKey` | Key containing the database password | String | `null` |
 
