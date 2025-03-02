@@ -29,7 +29,7 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.5 \
+  --version 0.2.4 \
   -n wger \
   --create-namespace
   -f values.yaml
@@ -50,151 +50,151 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 
 ### Globals
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `app.global.image.registry` | Image to use for the wger deployment | String | `docker.io` |
-| `app.global.image.repository` | Image to use for the wger deployment | String | `wger/server` |
-| `app.global.image.tag` | Takes the `Chart.yaml` `appversion` when empty. wger is developed as a rolling release | String | `latest` |
+| Name                          | Description                                           | Type    | Default Value |
+|-------------------------------|-------------------------------------------------------|---------|---------------|
+| `app.global.image.registry`   | Image to use for the wger deployment                  | String  | `docker.io`   |
+| `app.global.image.repository` | Image to use for the wger deployment                  | String  | `wger/server` |
+| `app.global.image.tag`        | Takes the `Chart.yaml` `appversion` when empty. wger is developed as a rolling release | String | `latest` |
 | `app.global.image.PullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `Always` |
-| `app.global.annotations` | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
-| `app.global.replicas` | Number of webserver instances that should be running. | Integer | `1` |
-| `app.global.securityContext` | Pod security context | Object | see [values.yaml](charts/wger/values.yaml)	|
+| `app.global.annotations`      | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
+| `app.global.replicas`         | Number of webserver instances that should be running. | Integer | `1`           |
+| `app.global.securityContext`  | Pod security context                                  | Object  | see [values.yaml](charts/wger/values.yaml) |
 
 
 ### Mail
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `app.mail.enabled` | Enable mail client configuration | Boolean | `false` |
-| `app.mail.server` | Mailserver | String | `null` |
-| `app.mail.port` | Mailserver Port | String | `587` |
-| `app.mail.user` | Mailserver User | String | `null` |
-| `app.mail.from_email` | From Email Address | String | `null` |
-| `app.mail.secret.name` | Name of the secret for the mail password | String | `mail` |
-| `app.mail.secret.key` | Key in the secret used for the mail password | String | `mail-password` |
+| Name                     | Description                                  | Type    | Default Value   |
+|--------------------------|----------------------------------------------|---------|-----------------|
+| `app.mail.enabled`       | Enable mail client configuration             | Boolean | `false`         |
+| `app.mail.server`        | Mailserver                                   | String  | `null`          |
+| `app.mail.port`          | Mailserver Port                              | String  | `587`           |
+| `app.mail.user`          | Mailserver User                              | String  | `null`          |
+| `app.mail.from_email`    | From Email Address                           | String  | `null`          |
+| `app.mail.secret.name`   | Name of the secret for the mail password     | String  | `mail`          |
+| `app.mail.secret.key`    | Key in the secret used for the mail password | String  | `mail-password` |
 | `app.mail.secret.update` | Enable or disable changes to the secret with the values | Boolean | `false` |
 | `app.mail.django_admins` | Django admins to receive internal server error, don't enable it when not needed | String | `null` |
 
 
 ### Django
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `app.django.secret.name` | Name of the secret | String | `django` |
-| `app.django.secret.key` | Key for the `SECRET_KEY` | String | `randAlphaNum 50` |
-| `app.django.cache.timeout` | Cache timeout in seconds | String | `1296000` |
-| `app.django.existingDatabase.enabled` | Enable existing database, you need to set `postgres.enabled: false` | Boolean | `false` |
-| `app.django.existingDatabase.engine` | Set database engine | String | `django.db.backends.postgresql` |
-| `app.django.existingDatabase.host` | Database hostname | String | `{{ .Release.Name }}-postgres` |
-| `app.django.existingDatabase.port` | Database port | Integer | `postgres.service.port` |
-| `app.django.existingDatabase.dbname` | Name of the database | String | `wger` |
-| `app.django.existingDatabase.dbuser` | Database User |String | `wger` |
-| `app.django.existingDatabase.dbpw` | Database Password | String | `null` |
-| `app.django.existingDatabase.existingSecret.name` | Name of a existing secret. If you like to use this for the database credentials | String | `null` |
-| `app.django.existingDatabase.existingSecret.dbnameKey` | Key containing the database name | String | `null` |
-| `app.django.existingDatabase.existingSecret.dbuserKey` | Key containing the database user | String | `null` |
-| `app.django.existingDatabase.existingSecret.dbpwKey` | Key containing the database password | String | `null` |
+| Name                                                   | Description                          | Type   | Default Value |
+|--------------------------------------------------------|--------------------------------------|--------|---------------|
+| `app.django.secret.name`                               | Name of the secret                   | String | `django` |
+| `app.django.secret.key`                                | Key for the `SECRET_KEY`             | String | `randAlphaNum 50` |
+| `app.django.cache.timeout`                             | Cache timeout in seconds             | String | `1296000` |
+| `app.django.existingDatabase.enabled`                  | Enable existing database, you need to set `postgres.enabled: false` | Boolean | `false` |
+| `app.django.existingDatabase.engine`                   | Set database engine                  | String | `django.db.backends.postgresql` |
+| `app.django.existingDatabase.host`                     | Database hostname                    | String | `{{ .Release.Name }}-postgres` |
+| `app.django.existingDatabase.port`                     | Database port                        | Integer | `postgres.service.port` |
+| `app.django.existingDatabase.dbname`                   | Name of the database                 | String | `wger` |
+| `app.django.existingDatabase.dbuser`                   | Database User                        | String | `wger` |
+| `app.django.existingDatabase.dbpw`                     | Database Password                    | String | `null` |
+| `app.django.existingDatabase.existingSecret.name`      | Name of a existing secret. If you like to use this for the database credentials | String | `null` |
+| `app.django.existingDatabase.existingSecret.dbnameKey` | Key containing the database name. Optional; will take `app.django.existingDatabase.dbname` if not set | String | `null` |
+| `app.django.existingDatabase.existingSecret.dbuserKey` | Key containing the database user     | String | `null` |
+| `app.django.existingDatabase.existingSecret.dbpwKey`   | Key containing the database password | String | `null` |
 
 ### Celery
 
 Celery requires persistent volumes.
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `celery.enabled`            | Enable celery for sync | Boolean    | `True` |
-| `celery.annotations`        | Annotations            | Dictionary | `{}`   |
-| `celery.replicas`           | Enable celery for sync | Integer    | `1`    |
-| `celery.replicasWorker`     | Enable celery for sync | Integer    | `1`    |
-| `celery.securityContext`    | Pod security context   | Object     | see [values.yaml](charts/wger/values.yaml) |
-| `celery.syncExercises`      | sync exercises         | Boolean    | `True` |
-| `celery.syncImages`         | sync exercise images   | Boolean    | `True` |
-| `celery.syncVideos`         | sync exercise videos   | Boolean    | `True` |
-| `celery.ingredientsFrom`    | source for ingredients, possible values `WGER`,`OFF` | String | `WGER` |
-| `celery.flower.enabled`     | enable flower webinterface for celery | Boolean | `False` |
-| `celery.flower.secret.name` | Name of the secret     | String     | `flower` |
-| `celery.flower.secret.password` | Password for the webinterface   | String | `randAlphaNum 50` |
+| Name                            | Description                   | Type       | Default Value     |
+|---------------------------------|-------------------------------|------------|-------------------|
+| `celery.enabled`                | Enable celery for sync        | Boolean    | `True`            |
+| `celery.annotations`            | Annotations                   | Dictionary | `{}`              |
+| `celery.replicas`               | Enable celery for sync        | Integer    | `1`               |
+| `celery.replicasWorker`         | Enable celery for sync        | Integer    | `1`               |
+| `celery.securityContext`        | Pod security context          | Object     | see [values.yaml](charts/wger/values.yaml) |
+| `celery.syncExercises`          | sync exercises                | Boolean    | `True`            |
+| `celery.syncImages`             | sync exercise images          | Boolean    | `True`            |
+| `celery.syncVideos`             | sync exercise videos          | Boolean    | `True`            |
+| `celery.ingredientsFrom`        | source for ingredients, possible values `WGER`,`OFF` | String  | `WGER`  |
+| `celery.flower.enabled`         | enable flower webinterface for celery                | Boolean | `False` |
+| `celery.flower.secret.name`     | Name of the secret            | String     | `flower`          |
+| `celery.flower.secret.password` | Password for the webinterface | String     | `randAlphaNum 50` |
 
 
 ## SimpleJWT
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `app.jwt.secret.name` | Name of the secret | String | `jwt` |
-| `app.jwt.secret.key` | Key for the `SIGNING_KEY` | String | `randAlphaNum 50` |
-| `app.jwt.accessTokenLifetime` | Duration of the access token, in minutes | String | `10` |
-| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours | String | `24` |
+| Name                           | Description                              | Type   | Default Value     |
+|--------------------------------|------------------------------------------|--------|-------------------|
+| `app.jwt.secret.name`          | Name of the secret                       | String | `jwt`             |
+| `app.jwt.secret.key`           | Key for the `SIGNING_KEY`                | String | `randAlphaNum 50` |
+| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String | `10`              |
+| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String | `24`              |
 
 
 ## Axes
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `app.axes.enabled` | Enable [axes](https://django-axes.readthedocs.io/en/latest/index.html) Bruteforce protection | Boolean | `false` |
-| `app.axes.lockoutParameters` | List (comma separated string) | `"ip_address"` |
-| `app.axes.failureLimit` | Limit of failed auth | String | `10` |
-| `app.axes.cooloffTime` | in Minutes | String | `30` |
-| `app.axes.ipwareProxyCount` | Count of proxies | String | `0` |
+| Name                                 | Description                   | Type | Default Value |
+|--------------------------------------|-------------------------------|------|---------------|
+| `app.axes.enabled`                   | Enable [axes](https://django-axes.readthedocs.io/en/latest/index.html) Bruteforce protection | Boolean | `false` |
+| `app.axes.lockoutParameters`         | List (comma separated string) | String | `"ip_address"` |
+| `app.axes.failureLimit`              | Limit of failed auth          | String | `10` |
+| `app.axes.cooloffTime`               | in Minutes                    | String | `30` |
+| `app.axes.ipwareProxyCount`          | Count of proxies              | String | `0` |
 | `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | List (comma separated string) | `"HTTP_X_FORWARDED_FOR,REMOTE_ADDR"` |
 
 
 ## Nginx
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `app.nginx.enabled` | Enable nginx as a proxy. This will enable persistent volumes, gunicorn and disable `DJANGO_DEBUG` | Boolean | `false` |
-| `app.nginx.image` | Image to use for the nginx proxy | String | `nginx:stable` |
+| Name                        | Description | Type | Default Value |
+|-----------------------------|-------------|------|---------------|
+| `app.nginx.enabled`         | Enable nginx as a proxy. This will enable persistent volumes, gunicorn and disable `DJANGO_DEBUG` | Boolean | `false` |
+| `app.nginx.image`           | Image to use for the nginx proxy | String | `nginx:stable` |
 | `app.nginx.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
 
 
 ## Ingress
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `ingress.enabled` | Whether to enable ingress. If `false`, the options from below are ignored | Boolean | `false` |
-| `ingress.ingressClassName` | The ClassName that this ingress should use | String | `` |
-| `ingress.url` | The URL that this ingress should use | String | `fit.example.com` |
-| `ingress.tls` | Whether to enable TLS. If using cert-manager, the correct annotations have to be set | Boolean | `true` |
-| `ingress.annotations` | Annotations to attach to the ingress | Dictionary | `{}` |
+| Name                       | Description                                | Type       | Default Value     |
+|----------------------------|--------------------------------------------|------------|-------------------|
+| `ingress.enabled`          | Whether to enable ingress. If `false`, the options from below are ignored | Boolean | `false` |
+| `ingress.ingressClassName` | The ClassName that this ingress should use | String     | ``                |
+| `ingress.url`              | The URL that this ingress should use       | String     | `fit.example.com` |
+| `ingress.tls`              | Whether to enable TLS. If using cert-manager, the correct annotations have to be set | Boolean | `true` |
+| `ingress.annotations`      | Annotations to attach to the ingress       | Dictionary | `{}`              |
 
 
 ## Service
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `service.type` | Sets the http service type, valid values are `NodePort`, `ClusterIP` or `LoadBalancer`. | String | `ClusterIP` |
-| `service.port` | Port for the service | Integer | `8000` |
-| `service.annotations` | Annotations to attach to the service | Dictionary | `{}` |
+| Name                  | Description                          | Type       | Default Value |
+|-----------------------|--------------------------------------|------------|---------------|
+| `service.type`        | Sets the http service type, valid values are `NodePort`, `ClusterIP` or `LoadBalancer`. | String | `ClusterIP` |
+| `service.port`        | Port for the service                 | Integer    | `8000` |
+| `service.annotations` | Annotations to attach to the service | Dictionary | `{}`   |
 
 
 ## Persistence
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
-| `app.persistence.enabled` | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
-| `app.persistence.existingClaim.media` | Name of the pvc for the media data when existingClaim is enabled  | String | `null` |
-| `app.persistence.existingClaim.static` | Name of the pvc for the static data when existingClaim is enabled  | String | `null` |
+| Name                                    | Description                                                        | Type | Default Value |
+|-----------------------------------------|--------------------------------------------------------------------|------|---------------|
+| `app.persistence.enabled`               | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
+| `app.persistence.existingClaim.media`   | Name of the pvc for the media data when existingClaim is enabled   | String     | `null` |
+| `app.persistence.existingClaim.static`  | Name of the pvc for the static data when existingClaim is enabled  | String     | `null` |
 | `app.persistence.existingClaim.enabled` | Whether to use a existing persistent storage claim. If `false`, the options from below are ignored | Boolean | `false` |
-| `app.persistence.storageClass` | StorageClass for the PVCs | String | `""` |
-| `app.persistence.accessModes` | Access modes for the PVCs | Array | `["ReadWriteMany"]` |
-| `app.persistence.size` | PVC size | String | `8Gi` |
-| `app.persistence.annotations` | Annotations to attach to the persistence objects (PVC and PV) | Dictionary | `{}` |
-| `app.persistence.enabled` | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
+| `app.persistence.storageClass`          | StorageClass for the PVCs                                          | String     | `""` |
+| `app.persistence.accessModes`           | Access modes for the PVCs                                          | Array      | `["ReadWriteMany"]` |
+| `app.persistence.size`                  | PVC size                                                           | String     | `8Gi` |
+| `app.persistence.annotations`           | Annotations to attach to the persistence objects (PVC and PV)      | Dictionary | `{}` |
+| `app.persistence.enabled`               | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
 
 
 ## Application Resources
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
+| Name                            | Description | Type | Default Value |
+|---------------------------------|-------------|------|---------------|
 | `app.resources.requests.memory` | Amount of memory that the app requests for running. Keep this value low to allow the pod to get admitted on a node. | String | `128Mi` |
-| `app.resources.requests.cpu` |  Amount of CPU that the app requests for running. Keep this value low to allow the pod to get admitted on a node. | String | `100m` |
-| `app.resources.limits.memory` |  Maximum amount of memory that the app is allowed to use. | String | `512Mi` |
-| `app.resources.limits.cpu` | Maximum amount of CPU that the app is allowed to use. | String | `500m` |
+| `app.resources.requests.cpu`    | Amount of CPU that the app requests for running. Keep this value low to allow the pod to get admitted on a node. | String | `100m` |
+| `app.resources.limits.memory`   | Maximum amount of memory that the app is allowed to use. | String | `512Mi` |
+| `app.resources.limits.cpu`      | Maximum amount of CPU that the app is allowed to use.    | String | `500m`  |
 
 
 ### Environment Variables
 
-| Name | Description | Type | Default Value |
-|------|-------------|------|---------------|
+| Name              | Description | Type | Default Value |
+|-------------------|-------------|------|---------------|
 | `app.environment` | Array of objects, representing additional environment variables to set for the deployment. | Array | see [_helpers.yaml](charts/wger/templates/_helpers.tpl) and [values.yaml](charts/wger/values.yaml) |
 
 There are more possible ENV variables, than the ones used in the deployment. Please check [prod.env](https://github.com/wger-project/docker/blob/master/config/prod.env).
@@ -468,5 +468,4 @@ Feel free to contact us if you found this useful or if there was something that 
 ## Additional information
 
 * [groundhog2k PostgreSQL chart](https://github.com/groundhog2k/helm-charts/tree/master/charts/postgres)
-
 * [groundhog2k Redis chart](https://github.com/groundhog2k/helm-charts/tree/master/charts/redis)
