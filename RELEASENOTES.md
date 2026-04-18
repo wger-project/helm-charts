@@ -1,3 +1,9 @@
+https://github.com/wger-project/docker/commit/ec5893553d81445485e5d32f5a6be637a12fd492
+
+## 0.3.0
+
+* upgrade to wger 2.5
+
 ## 0.2.5
 
 * wger starts using releases

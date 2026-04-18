@@ -29,7 +29,7 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.2.4 \
+  --version 0.3.0 \
   -n wger \
   --create-namespace
   -f values.yaml
@@ -315,7 +315,7 @@ helm -n wger list
 
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.2.5 \
+  --version 0.3.0 \
   -n wger \
   --create-namespace
   -f values.yaml
@@ -405,7 +405,7 @@ app:
 ```bash
 helm upgrade \
   --install wger github-wger/wger \
-  --version 0.1.5 \
+  --version 0.3.0 \
   -n wger \
   --create-namespace
   -f values.yaml
