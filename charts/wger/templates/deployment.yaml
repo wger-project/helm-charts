@@ -40,6 +40,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "private-key"
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "public-key"
             - name: SIGNING_KEY
               valueFrom:
                 secretKeyRef:
@@ -160,6 +170,162 @@ spec:
             name: {{ .Release.Name }}-nginx-configmap
         {{- end }}
       {{- end }} # {{/*- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) */}}
+
+
+
+
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-powersync
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.powersync.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-powersync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-powersync
+      annotations:
+    {{- with .Values.powersync.annotations }}
+      {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote}}
+      {{- end }}
+    {{- end }}
+    spec:
+      {{- with .Values.powersync.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: powersync
+          image: "{{ .Values.powersync.image.registry }}/{{ .Values.powersync.image.repository }}:{{ .Values.powersync.image.tag }}"
+          imagePullPolicy: {{ .Values.powersync.image.PullPolicy }}
+          env:
+            {{- include "wger.env" . | indent 12 }}
+            {{- include "database.settings" . | indent 8 }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
+                  key: "secret-key"
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "private-key"
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "public-key"
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "signing-key"
+            {{- if .Values.app.mail.enabled }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
+                  key: {{ .Values.app.mail.secret.key | default "mail-password" | quote }}
+            {{- end }}
+            # to enable redis authentication
+            # additional settings in the values
+            # must be made, passed to the redis
+            # container
+            {{- if .Values.redis.auth.enabled }}
+            - name: DJANGO_CACHE_CLIENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "redis"
+                  key: "redis-password"
+            - name: CELERY_BROKER
+              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+            - name: CELERY_BACKEND
+              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+            {{- else }}
+            - name: CELERY_BROKER
+              value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+            - name: CELERY_BACKEND
+              value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            {{- if .Values.celery.flower.enabled }}
+            - name: CELERY_FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.celery.flower.secret.name | default "flower" | quote }}
+                  key: "password"
+            {{- end }}
+            # This is the path (inside the container) to the YAML config file
+            # Alternatively the config path can be specified in the command
+            # e.g:
+            #   command: ['start', '-r', 'unified', '-c', '/config/powersync.yaml']
+            #
+            # The config file can also be specified in Base 64 encoding
+            # e.g.: Via an environment variable
+            #   POWERSYNC_CONFIG_B64: [base64 encoded content]
+            # or e.g.: Via a command line parameter
+            #    command: ['start', '-r', 'unified', '-c64', '[base64 encoded content]']
+            - name: POWERSYNC_CONFIG_PATH
+              {{- if .Values.powersync.configPath }}
+              value: {{ .Values.powersync.configPath | quote }}
+              {{- else }}
+              value: "/config/powersync.yaml"
+              {{- end }}
+            # Sync rules can be specified as base 64 encoded YAML
+            # e.g: Via an environment variable
+            # POWERSYNC_SYNC_RULES_B64: "[base64 encoded sync rules]"
+            # or e.g.: Via a command line parameter
+            #     command: ['start', '-r', 'unified', '-sync64', '[base64 encoded content]']
+            - name: PS_JWKS_URL
+              {{- if .Values.powersync.jwksURL }}
+              value: {{ .Values.powersync.jwksURL | quote }}
+              {{- else }}
+              value: "http://{{ .Release.Name }}-http:8080/api/v2/powersync-keys"
+              {{- end }}
+            
+          # The unified service runs an API server and replication worker in the same container.
+          # These services can be executed in different containers by using individual entry commands e.g.
+          # Start only the API server with
+          #   command: ['start', '-r', 'api']
+          # Start only the replication worker with
+          #   command: ['start', '-r', 'sync']
+
+          # Migrations occur automatically by default. Default migrations can be disabled in `powersync.yaml`:
+          #  migrations:
+          #   disable_auto_migration: true
+          #
+          # Service migrations can be manually triggered by starting a container with the
+          # following command:
+          #     command: ['migrate', 'up']
+          # Note that this container must finish executing before starting the sync or unified container.
+          command: ["start", "-r", "unified"]
+          ports:
+            - containerPort: 8080
+              name: api
+            - containerPort: 9090
+              name: prometheus
+          volumeMounts:
+            - name: powersync-conf
+              mountPath: /config
+      volumes:
+        - name: powersync-conf
+          configMap:
+            name: {{ .Release.Name }}-powersync-configmap
+
+
+
+
+
 {{- if .Values.celery.enabled }}
 # celery only works with persistence enabled
 {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
@@ -206,6 +372,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "private-key"
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "public-key"
             - name: SIGNING_KEY
               valueFrom:
                 secretKeyRef:
@@ -268,6 +444,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "private-key"
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "public-key"
             - name: SIGNING_KEY
               valueFrom:
                 secretKeyRef:
@@ -391,6 +577,15 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+                  key: "private-key"
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
             - name: SIGNING_KEY
               valueFrom:
                 secretKeyRef:

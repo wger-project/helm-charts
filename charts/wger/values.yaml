@@ -116,6 +116,26 @@ app:
       password: null
       update: false
 
+# powersync
+# for offline synchronization of the wger app
+powersync:
+  image:
+    registry: docker.io
+    repository: journeyapps/powersync-service
+    tag: latest
+    PullPolicy: IfNotPresent
+  annotations: {}
+  replicas: 1
+  replicasWorker: 1
+  securityContext:
+    fsGroup: 1000
+  configPath: null
+  jwksURL: null
+
+
+
+
+
 # celery tasks
 # https://wger.readthedocs.io/en/latest/celery.html
 celery:

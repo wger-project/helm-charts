@@ -120,7 +120,7 @@ Celery requires persistent volumes.
 | Name                           | Description                              | Type   | Default Value     |
 |--------------------------------|------------------------------------------|--------|-------------------|
 | `app.jwt.secret.name`          | Name of the secret                       | String | `jwt`             |
-| `app.jwt.secret.key`           | Key for the `SIGNING_KEY`                | String | `randAlphaNum 50` |
+| `app.jwt.signing.key`          | Key for the `SIGNING_KEY`                | String | `randAlphaNum 50` |
 | `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String | `10`              |
 | `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String | `24`              |
 

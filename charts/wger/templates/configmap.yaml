@@ -5,12 +5,6 @@ metadata:
   name: {{ .Release.Name }}-nginx-configmap
 data:
   wger-app.conf: |
-    # custom access log configuration
-    log_format custom '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
-
-    # proxy
     upstream app_server {
       # fail_timeout=0 means we always retry an upstream even if it failed
       # to return a good HTTP response <- according to gunicorn doc
@@ -18,60 +12,111 @@ data:
       zone upstreams 64K;
       keepalive 2;
     }
+    # Used by the /ps/ proxy below.
+    upstream powersync {
+        server powersync:8080;
+    }
 
-    # if no Host match, close the connection to prevent host spoofing
-    server {
-      listen 80 default_server;
-      return 444;
+    # custom access log configuration
+    log_format custom '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    # JSON access log format compatible with the Loki/Alloy parser
+    # (same field names as the Caddy parser, so the same dashboard works).
+    log_format json_access escape=json
+        '{'
+            '"ts":"$time_iso8601",'
+            '"client_ip":"$remote_addr",'
+            '"request_method":"$request_method",'
+            '"request_uri":"$request_uri",'
+            '"request_proto":"$server_protocol",'
+            '"request_host":"$host",'
+            '"status":$status,'
+            '"size":$body_bytes_sent,'
+            '"duration":$request_time,'
+            '"user_agent":"$http_user_agent",'
+            '"referer":"$http_referer"'
+        '}';
+    
+    # Universal X-Forwarded-Proto handling for all deployment scenarios
+    # - Uses upstream value when behind reverse proxy (Traefik, Caddy, etc.)
+    # - Falls back to nginx's scheme for direct connections and port forwarding
+    map $http_x_forwarded_proto $final_forwarded_proto {
+        default $http_x_forwarded_proto;
+        ''      $scheme;
     }
 
     # webserver
     server {
-      listen 8080 deferred;
-      client_max_body_size 4G;
+      listen 80;
 
       # set the correct host(s) for your site
       server_name {{ join " " .Values.ingress.url }};
 
-      access_log /var/log/nginx/access.log custom;
-      error_log  /var/log/nginx/error.log warn;
-
-      # path for static files (only needed for serving "local" static and media files)
-      root /var/www/html/;
+      access_log /var/log/nginx/access.log custom json_access;
 
       location / {
-        # checks for static file, if not found proxy to app
-        try_files $uri @proxy_to_app;
-      }
+        proxy_pass http://app_server;
 
-      location @proxy_to_app {
-        proxy_http_version 1.1;
-
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        {{- if .Values.ingress.tls }}
-        proxy_set_header X-Forwarded-Proto https;
-        {{- else }}
-        proxy_set_header X-Forwarded-Proto $scheme;
-        {{- end }}
+        # Standard proxy headers
         proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $final_forwarded_proto;
+        proxy_set_header X-Forwarded-Host $http_host;
 
-        # keep alive
-        proxy_set_header   "Connection" "";
-
-        # https://www.getpagespeed.com/server-setup/nginx/tuning-proxy_buffer_size-in-nginx
-        proxy_buffer_size 32k;
-        proxy_busy_buffers_size 40k; # proxy_buffer_size + 2 small buffers of 4k
-        proxy_buffers 64 4k;
-        proxy_max_temp_file_size 0;
-
-        # give gunicorn time to process
-        proxy_read_timeout 1800;
+        # WebSocket support
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
 
         proxy_redirect off;
-        proxy_pass http://app_server;
+        proxy_http_version 1.1;
+
+        # Timeouts for WebSocket connections
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
       }
+
+      # Reverse proxy for the PowerSync service, used by the mobile app for offline mode
+      location /ps/ {
+        proxy_pass http://powersync/;
+
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $final_forwarded_proto;
+
+        # WebSocket upgrade (used by the diagnostics app and the Web SDK)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        # Sync streams are long-lived (HTTP/2 streaming POST) and must not
+        # be buffered or cut off by short timeouts.
+        proxy_buffering off;
+        proxy_read_timeout 1d;
+        proxy_send_timeout 1d;
+      }
+
+      location /static/ {
+        alias /wger/static/;
+
+        # Files in the static folder are preprocessed by collectstatic and have a hash
+        # in their names, so we can cache longer
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header Vary "Accept-Encoding" always;
+      }
+
+      location /media/ {
+        alias /wger/media/;
+      }
+
+      # Increase max body size to allow for video uploads
+      client_max_body_size 100M;
     }
 {{- end }}
+
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -80,3 +125,216 @@ metadata:
 data:
   40-grantSuperuser.sql: |
     ALTER USER {{ .Values.postgres.userDatabase.user.value }} WITH SUPERUSER;
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-powersync-configmap
+data:
+  powersync.yaml: |
+    # yaml-language-server: $schema=../schema/schema.json
+
+    # Note that this example uses YAML custom tags for environment variable substitution.
+    # Using `!env [variable name]` will substitute the value of the environment variable named
+    # [variable name].
+    #
+    # Only environment variables with names starting with `PS_` can be substituted.
+    #
+    # e.g. With the environment variable `export PS_STORAGE_MONGO_URI=mongodb://localhost:27017`
+    # and YAML code:
+    #  uri: !env PS_STORAGE_MONGO_URI
+    # The YAML will resolve to:
+    #  uri: mongodb://localhost:27017
+    #
+    # If using VS Code see the `.vscode/settings.json` definitions which define custom tags.
+
+    # migrations:
+    #   # Migrations run automatically by default.
+    #   # Setting this to true will skip automatic migrations.
+    #   # Migrations can be triggered externally by altering the container `command`.
+    #   disable_auto_migration: true
+
+    # Settings for telemetry reporting
+    # See https://docs.powersync.com/self-hosting/telemetry
+    telemetry:
+      disable_telemetry_sharing: true
+
+      # Expose prometheus metrics on this port
+      prometheus_port: 9090
+
+    # Settings for source database replication
+    replication:
+      # Specify database connection details
+      # Note only 1 connection is currently supported
+      # Multiple connection support is on the roadmap
+      connections:
+        - type: postgresql
+          uri: !env PS_DATABASE_URI
+
+          # Or use individual params
+          # hostname: db # From the Docker Compose service name
+          # port: 5432
+          # database: postgres
+          # username: postgres
+          # password: mypassword
+
+          # SSL settings
+          sslmode: disable # 'verify-full' (default) or 'verify-ca' or 'disable'
+          # 'disable' is OK for local/private networks, not for public networks
+
+
+    # Connection settings for sync bucket storage
+    storage:
+      type: postgresql
+      uri: !env PS_STORAGE_PG_URI
+      sslmode: disable
+
+    # The port which the PowerSync API server will listen on
+    port: !env PS_PORT
+
+    # Specify sync rules
+    sync_rules:
+      path: sync_rules.yaml
+
+    # Client (application end user) authentication settings
+    client_auth:
+      allow_local_jwks: true
+      jwks_uri: !env PS_JWKS_URL
+
+      # JWKS audience
+      audience: ["powersync"]
+
+  sync_rules.yaml: |
+    # Note that changes to this file are not watched.
+    # The service needs to be restarted for changes to take effect.
+
+    # Warning: a user may have at most 1000 buckets, i.e. parameter-query results
+    # summed across all streams. This counts the *parameter* rows, not the data
+    # rows inside a bucket (a single bucket can hold any number of rows). For a
+    # stream with a `with:` CTE the count is the number of rows the CTE returns,
+    # so for `user_ingredients` below that is the number of distinct ingredients
+    # a user has ever referenced. Exceeding the limit is a hard error
+    # (PSYNC_S2305 "Too many parameter query results").
+    # See https://docs.powersync.com/sync/rules/parameter-queries
+    #
+    # Streams are split by update frequency (cold / medium / hot) so that
+    # bucket compaction can collapse the head of hot buckets without being
+    # blocked by long-lived rows from cold tables.
+    #
+    # For details, see the documentation:
+    # https://docs.powersync.com/sync/streams/overview
+    # https://docs.powersync.com/maintenance-ops/compacting-buckets
+
+    config:
+      edition: 3
+
+    streams:
+      # Global reference data, shared by all users, changes rarely enough
+      core:
+        auto_subscribe: true
+        queries:
+          - SELECT * FROM core_language
+          - SELECT * FROM core_license
+          - SELECT * FROM core_repetitionunit
+          - SELECT * FROM core_weightunit
+          - SELECT * FROM exercises_exercise
+          - SELECT * FROM exercises_translation
+          - SELECT * FROM exercises_alias
+          - SELECT * FROM exercises_exercisecomment
+          - SELECT * FROM exercises_muscle
+          - SELECT * FROM exercises_exercise_muscles
+          - SELECT * FROM exercises_exercise_muscles_secondary
+          - SELECT * FROM exercises_equipment
+          - SELECT * FROM exercises_exercise_equipment
+          - SELECT * FROM exercises_exercisecategory
+          - SELECT * FROM exercises_exerciseimage
+          - SELECT * FROM exercises_exercisevideo
+
+      # COLD, per-user data that almost never changes after creation.
+      user_profile:
+        auto_subscribe: true
+        queries:
+          - SELECT * FROM core_userprofile WHERE CAST(user_id AS TEXT) = auth.user_id()
+          - SELECT * FROM gallery_image WHERE CAST(user_id AS TEXT) = auth.user_id()
+
+      # COLD but potentially large, only the per-user *filter set* changes when the user logs new foods
+      user_ingredients:
+        auto_subscribe: true
+        with:
+          user_ingredients: |
+            SELECT DISTINCT nutrition_synced_ingredient.id
+            FROM nutrition_synced_ingredient
+            WHERE nutrition_synced_ingredient.id IN (
+                    SELECT nutrition_logitem.ingredient_id FROM nutrition_logitem
+                    JOIN nutrition_nutritionplan ON nutrition_logitem.plan_id = nutrition_nutritionplan.id
+                    WHERE CAST(nutrition_nutritionplan.user_id AS TEXT) = auth.user_id())
+              OR nutrition_synced_ingredient.id IN (
+                    SELECT nutrition_mealitem.ingredient_id FROM nutrition_mealitem
+                    JOIN nutrition_meal ON nutrition_mealitem.meal_id = nutrition_meal.id
+                    JOIN nutrition_nutritionplan ON nutrition_meal.plan_id = nutrition_nutritionplan.id
+                    WHERE CAST(nutrition_nutritionplan.user_id AS TEXT) = auth.user_id())
+        queries:
+          - SELECT * FROM nutrition_synced_ingredient AS nutrition_ingredient WHERE id IN user_ingredients
+          - |
+            SELECT nutrition_image.* FROM nutrition_image
+            WHERE nutrition_image.ingredient_id IN user_ingredients
+          - |
+            SELECT nutrition_ingredientweightunit.* FROM nutrition_ingredientweightunit
+            WHERE nutrition_ingredientweightunit.ingredient_id IN user_ingredients
+
+      # MEDIUM. Edited e.g. when the user builds or edits their routine or nutrition plan,
+      # but not on every workout.
+      user_planning:
+        auto_subscribe: true
+        queries:
+          # Routines (templates excluded)
+          - SELECT * FROM manager_routine WHERE CAST(user_id AS TEXT) = auth.user_id() AND is_template = FALSE
+
+          # Measurements
+          - SELECT * FROM measurements_category WHERE CAST(user_id AS TEXT) = auth.user_id()
+          - |
+            SELECT measurements_measurement.*
+            FROM measurements_measurement
+            INNER JOIN measurements_category
+              ON measurements_measurement.category_id = measurements_category.id
+            WHERE CAST(measurements_category.user_id AS TEXT) = auth.user_id()
+
+          # Nutrition plan structure (not the log items)
+          - SELECT * FROM nutrition_nutritionplan WHERE CAST(user_id AS TEXT) = auth.user_id()
+          - |
+            SELECT nutrition_meal.*
+            FROM nutrition_meal
+            JOIN nutrition_nutritionplan
+              ON nutrition_meal.plan_id = nutrition_nutritionplan.id
+            WHERE CAST(nutrition_nutritionplan.user_id AS TEXT) = auth.user_id()
+          - |
+            SELECT nutrition_mealitem.*
+            FROM nutrition_mealitem
+            JOIN nutrition_meal
+              ON nutrition_mealitem.meal_id = nutrition_meal.id
+            JOIN nutrition_nutritionplan
+              ON nutrition_meal.plan_id = nutrition_nutritionplan.id
+            WHERE CAST(nutrition_nutritionplan.user_id AS TEXT) = auth.user_id()
+
+
+      # HOT. Generates  one or more new rows per workout / meal. Compaction has the
+      # biggest impact here, so it must stay isolated from the other streams above
+      user_activity:
+        auto_subscribe: true
+        queries:
+          # Weight tracking
+          - SELECT uuid AS id, weight, date, user_id FROM weight_weightentry WHERE CAST(user_id AS TEXT) = auth.user_id()
+
+          # Workout sessions and per-set logs
+          - SELECT * FROM manager_workoutsession WHERE CAST(user_id AS TEXT) = auth.user_id()
+          - SELECT * FROM manager_workoutlog WHERE CAST(user_id AS TEXT) = auth.user_id()
+
+          # Nutrition log entries
+          - |
+            SELECT nutrition_logitem.*
+            FROM nutrition_logitem
+            JOIN nutrition_nutritionplan
+              ON nutrition_logitem.plan_id = nutrition_nutritionplan.id
+            WHERE CAST(nutrition_nutritionplan.user_id AS TEXT) = auth.user_id()
+
