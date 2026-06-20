@@ -39,6 +39,9 @@ spec:
               # Derive the public key (PEM format)
               openssl rsa -pubout -in /tmp/jwt.key -out /tmp/jwt.pub
               
+              # The keys are base64-wrapped JWK, with python `base64.urlsafe_b64encode`
+              # https://github.com/wger-project/wger/blob/master/wger/core/management/commands/generate-jwt-keys.py
+              #
               # Update or create the secret
               cat <<EOF | kubectl apply -f -
               apiVersion: v1
@@ -47,7 +50,7 @@ spec:
                 name: {{ .Values.app.jwt.secret.name | default "jwt" }}
                 namespace: {{ .Release.Namespace }}
               stringData:
-                private-key: {{ .Values.app.jwt.secret.privateKey | default $(cat /tmp/jwt.key) | quote }}
-                public-key: {{ .Values.app.jwt.secret.publicKey | default $(cat /tmp/jwt.pub) | quote }}
+                private-key: {{ .Values.app.jwt.secret.privateKey | default $(cat /tmp/jwt.key | base64 -w0 | tr '+/' '-_') | quote }}
+                public-key: {{ .Values.app.jwt.secret.publicKey | default $(cat /tmp/jwt.pub | base64 -w0 | tr '+/' '-_') | quote }}
               EOF
 {{- end }}
