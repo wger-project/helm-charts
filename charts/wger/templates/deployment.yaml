@@ -32,7 +32,7 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
-            {{- include "database.settings" . | indent 8 }}
+            {{- include "database.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -74,7 +74,8 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            # {{/*- if .Values.redis.auth.enabled */}}
+            {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -86,13 +87,12 @@ spec:
             - name: app
               containerPort: 8000
               protocol: TCP
+          {{- if .Values.app.resources }}
           resources:
-            requests:
-              memory: {{ .Values.app.resources.requests.memory }}
-              cpu: {{ .Values.app.resources.requests.cpu }}
-            limits:
-              memory: {{ .Values.app.resources.limits.memory }}
-              cpu: {{ .Values.app.resources.limits.cpu }}
+            {{- with .Values.app.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
           volumeMounts:
             - name: wger-media
               mountPath: /home/wger/media
@@ -171,9 +171,12 @@ spec:
             - name: wger-static
               mountPath: /var/www/html/static
               readOnly: true
+          {{- if .Values.nginx.resources }}
           resources:
-            requests:
-              cpu: 10m
+            {{- with .Values.nginx.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
       volumes:
         - name: wger-media
           persistentVolumeClaim:
@@ -217,7 +220,11 @@ spec:
           image: "{{ .Values.powersync.image.registry }}/{{ .Values.powersync.image.repository }}:{{ .Values.powersync.image.tag }}"
           imagePullPolicy: {{ .Values.powersync.image.PullPolicy }}
           env:
-            {{- include "powersync.settings" . | indent 8 }}
+            {{- include "powersync.settings" . | indent 10 }}
+          #
+          # In Kubernetes commands overrides the entrypoint and args adds additional arguments to the entrypoint (command)
+          # so in this comment "command" is ment do be "args"
+          #
           # The unified service runs an API server and replication worker in the same container.
           # These services can be executed in different containers by using individual entry commands e.g.
           # Start only the API server with
@@ -233,7 +240,7 @@ spec:
           # following command:
           #     command: ['migrate', 'up']
           # Note that this container must finish executing before starting the sync or unified container.
-          command: ["start", "-r", "unified"]
+          args: ["start", "-r", "unified"]
           ports:
             - name: api
               containerPort: 8080
@@ -244,6 +251,17 @@ spec:
           volumeMounts:
             - name: powersync-conf
               mountPath: /config
+          {{- if .Values.powersync.resources }}
+          resources:
+            {{- with .Values.powersync.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+      initContainers:
+        - name: init-container
+          image: docker.io/busybox:latest
+          command:
+          {{- include "initContainer.web.command" . | indent 10 }}
       volumes:
         - name: powersync-conf
           configMap:
@@ -284,22 +302,12 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
-            {{- include "database.settings" . | indent 8 }}
+            {{- include "database.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
-            - name: JWT_PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "private-key"
-            - name: JWT_PUBLIC_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "public-key"
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -326,7 +334,8 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            # {{/*- if .Values.redis.auth.enabled */}}
+            {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -339,6 +348,12 @@ spec:
             - name: wger-celery-beat
               mountPath: /home/wger/beat
               readOnly: false
+          {{- if .Values.celery.resources }}
+          resources:
+            {{- with .Values.celery.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
         # celery flower
         {{- if .Values.celery.flower.enabled }}
         - name: celery-flower
@@ -346,22 +361,12 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
-            {{- include "database.settings" . | indent 8 }}
+            {{- include "database.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
-            - name: JWT_PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "private-key"
-            - name: JWT_PUBLIC_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "public-key"
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -388,18 +393,26 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            # {{/*- if .Values.redis.auth.enabled */}}
+            {{- end }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.celery.flower.secret.name | default "flower" | quote }}
                   key: "password"
           command: ["/start-flower"]
+          {{- if .Values.celery.flower.resources }}
+          resources:
+            {{- with .Values.celery.flower.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
           ports:
             - name: flower
               containerPort: 5555
               protocol: TCP
-        {{- end }} # {{/*- if .Values.celery.flower.enabled */}}
+        # {{/*- if .Values.celery.flower.enabled */}}
+        {{- end }}
       initContainers:
         - name: init-container
           image: docker.io/busybox:latest
@@ -450,21 +463,12 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
-            {{- include "database.settings" . | indent 8 }}
+            {{- include "database.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
-            - name: JWT_PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "private-key"
-            - name: JWT_PUBLIC_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -491,7 +495,8 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            # {{/*- if .Values.redis.auth.enabled */}}
+            {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -504,6 +509,12 @@ spec:
             - name: wger-media
               mountPath: /home/wger/media
               readOnly: false
+          {{- if .Values.celery.resources }}
+          resources:
+            {{- with .Values.celery.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
       initContainers:
       - name: init-container
         image: docker.io/busybox:latest
@@ -516,5 +527,5 @@ spec:
         - name: wger-celery-beat
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
----
-{{- end }} # {{/*- if .Values.celery.enabled */}}
+# {{/*- if .Values.celery.enabled */}}
+{{- end }}

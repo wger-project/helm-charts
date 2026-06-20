@@ -73,8 +73,7 @@ app:
   jwt:
     secret:
       update: true
-      name: null
-      key: null
+      name: "jwt"
       # JWT keys, used by the mobile app. This default NEEDS to be changed.
       # Generate fresh keys with: docker compose exec web ./manage.py generate-jwt-keys
       # @todo autogenerate a new key and save it into the secret when installing
@@ -115,6 +114,13 @@ app:
 nginx:
   image: nginx:stable
   imagePullPolicy: IfNotPresent
+  resources: null
+    # requests:
+    #   memory: 512Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 1Gi
+    #   cpu: 500m
 
 # powersync
 # for offline synchronization of the wger app
@@ -131,6 +137,13 @@ powersync:
     fsGroup: 1000
   configPath: null
   jwksURL: null
+  resources: null
+    # requests:
+    #   memory: 512Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 1Gi
+    #   cpu: 500m
 
 # celery tasks
 # https://wger.readthedocs.io/en/latest/celery.html
@@ -149,12 +162,26 @@ celery:
   # so that we don't overwhelm the Open Food Facts servers. Needs to have USE_CELERY
   # set to true
   ingredientsFrom: WGER
+  resources: null
+    # requests:
+    #   memory: 512Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 1Gi
+    #   cpu: 500m
   # flower the webinterface for celery
   flower:
     enabled: false
     secret:
       name: null
       password: null
+    resources: null
+    # requests:
+    #   memory: 512Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 1Gi
+    #   cpu: 500m
 
 ingress:
   enabled: false

@@ -170,46 +170,46 @@ environment:
   - name: DJANGO_DB_PORT
     value: {{ .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
   {{- if .Values.app.django.existingDatabase.enabled }}
-    - name: DJANGO_DB_USER
-      valueFrom:
-        secretKeyRef:
-          name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
-          key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
-    - name: DJANGO_DB_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
-          key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
+  - name: DJANGO_DB_USER
+    valueFrom:
+      secretKeyRef:
+        name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
+        key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
+  - name: DJANGO_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
+        key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
     {{- if .Values.app.django.existingDatabase.existingSecret.dbnameKey }}
-    - name: DJANGO_DB_DATABASE
-      valueFrom:
-        secretKeyRef:
-          name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
-          key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+  - name: DJANGO_DB_DATABASE
+    valueFrom:
+      secretKeyRef:
+        name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
+        key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
     {{- else }}
-    - name: DJANGO_DB_DATABASE
-      value: {{ .Values.app.django.existingDatabase.dbname | default "wger" | quote }}
+  - name: DJANGO_DB_DATABASE
+    value: {{ .Values.app.django.existingDatabase.dbname | default "wger" | quote }}
     {{- end }}
   {{- else }}
-    - name: DJANGO_DB_USER
-      valueFrom:
-        secretKeyRef:
-          name:  {{.Release.Name}}-postgres
-          key: "USERDB_USER"
-    - name: DJANGO_DB_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: {{.Release.Name}}-postgres
-          key: "USERDB_PASSWORD"
-    - name: DJANGO_DB_DATABASE
-      valueFrom:
-        secretKeyRef:
-          name: {{.Release.Name}}-postgres
-          key: "POSTGRES_DB"
+  - name: DJANGO_DB_USER
+    valueFrom:
+      secretKeyRef:
+        name:  {{.Release.Name}}-postgres
+        key: "USERDB_USER"
+  - name: DJANGO_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: {{.Release.Name}}-postgres
+        key: "USERDB_PASSWORD"
+  - name: DJANGO_DB_DATABASE
+    valueFrom:
+      secretKeyRef:
+        name: {{.Release.Name}}-postgres
+        key: "POSTGRES_DB"
   {{- end }}
   # powersync database
   - name: PS_DATABASE_URI
-    value: "postgres://${DJANGO_DB_USER}:${DJANGO_DB_PASSWORD}@${DJANGO_DB_HOST}:${DJANGO_DB_PORT}/${DJANGO_DB_DATABASE}"
+    value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
 {{- end }}
 
 {{/*
@@ -264,24 +264,24 @@ environment:
     value: {{ .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
   {{- if .Values.app.django.existingDatabase.enabled }}
     {{- if .Values.app.django.existingDatabase.existingSecret.dbnameKey }}
-    - name: DJANGO_DB_DATABASE
-      valueFrom:
-        secretKeyRef:
-          name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
-          key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+  - name: DJANGO_DB_DATABASE
+    valueFrom:
+      secretKeyRef:
+        name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
+        key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
     {{- else }}
-    - name: DJANGO_DB_DATABASE
-      value: {{ .Values.app.django.existingDatabase.dbname | default "wger" | quote }}
+  - name: DJANGO_DB_DATABASE
+    value: {{ .Values.app.django.existingDatabase.dbname | default "wger" | quote }}
     {{- end }}
   {{- else }}
-    - name: DJANGO_DB_DATABASE
-      valueFrom:
-        secretKeyRef:
-          name: {{.Release.Name}}-postgres
-          key: "POSTGRES_DB"
+  - name: DJANGO_DB_DATABASE
+    valueFrom:
+      secretKeyRef:
+        name: {{.Release.Name}}-postgres
+        key: "POSTGRES_DB"
   {{- end }}
   - name: PS_STORAGE_PG_URI
-    value: "postgres://powersync_storage:powersync_password@${DJANGO_DB_HOST}:${DJANGO_DB_PORT}/${DJANGO_DB_DATABASE}"
+    value: "postgres://powersync_storage:powersync_password@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
 {{- end }}
 
 {{/*
