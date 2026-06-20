@@ -1,0 +1,53 @@
+# updates or creates the jwt secret
+{{- define "manipulate" -}}
+{{- if (lookup "v1" "Secret" .Release.Namespace .Values.app.jwt.secret.name) -}}
+  {{- if .Values.app.jwt.secret.update -}}
+doit
+  {{- end -}}
+{{- else -}}
+doit
+{{- end -}}
+{{- end -}}
+
+{{- $manipulate := (include "manipulate" .) }}
+{{- if eq $manipulate "doit" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-keygen
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade,pre-rollback
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Release.Name }}
+      containers:
+        - name: keygen
+          image: alpine:latest
+          command:
+            - sh
+            - -c
+            - |
+              # Generate a 2048-bit RSA private key
+              openssl genpkey -algorithm RSA -out /tmp/jwt.key -pkeyopt rsa_keygen_bits:2048
+              
+              # Derive the public key (PEM format)
+              openssl rsa -pubout -in /tmp/jwt.key -out /tmp/jwt.pub
+              
+              # Update or create the secret
+              cat <<EOF | kubectl apply -f -
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: {{ .Values.app.jwt.secret.name | default "jwt" }}
+                namespace: {{ .Release.Namespace }}
+              stringData:
+                private-key: {{ .Values.app.jwt.secret.privateKey | default $(cat /tmp/jwt.key) | quote }}
+                public-key: {{ .Values.app.jwt.secret.publicKey | default $(cat /tmp/jwt.pub) | quote }}
+              EOF
+{{- end }}
