@@ -231,14 +231,7 @@ postgres:
   # some database migration in django requires this
   # otherwise it was not able to create the database
   extraScripts: wger-pg-init
-  args: [
-      "-c", "wal_level=logical",
-      "-c", "shared_buffers=256MB",
-      "-c", "effective_cache_size=768MB",
-      "-c", "work_mem=8MB",
-      "-c", "random_page_cost=1.1",
-      "-c", "max_connections=30"
-      ]
+  args: ["-c", "wal_level=logical", "-c", "shared_buffers=256MB", "-c", "effective_cache_size=768MB", "-c", "work_mem=8MB", "-c", "random_page_cost=1.1", "-c", "max_connections=30"]
   service:
     port: 5432
   resources:
