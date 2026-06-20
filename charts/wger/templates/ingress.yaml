@@ -31,5 +31,5 @@ spec:
             service:
               name: {{ .Release.Name }}-http
               port:
-                number: 8000
+                number: {{ .Values.service.port }}
 {{- end }}

@@ -1,5 +1,14 @@
 https://github.com/wger-project/docker/commit/ec5893553d81445485e5d32f5a6be637a12fd492
 
+## 1.0.0
+
+* JWT Signing Key Setting has been removed
+* nginx and persistent storage is now mandatory
+* nginx get's it's own deployment
+* clean up unused volume definitions
+* new powersync service for offline sync with the app introduced
+* service and target ports changes
+
 ## 0.3.0
 
 * upgrade to wger 2.5

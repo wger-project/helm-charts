@@ -1,4 +1,3 @@
-{{- if .Values.app.nginx.enabled }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -8,13 +7,13 @@ data:
     upstream app_server {
       # fail_timeout=0 means we always retry an upstream even if it failed
       # to return a good HTTP response <- according to gunicorn doc
-      server 127.0.0.1:8000 fail_timeout=0;
+      server {{.Release.Name}}-app.{{.Release.Namespace}}.svc.cluster.local:8000 fail_timeout=0;
       zone upstreams 64K;
       keepalive 2;
     }
     # Used by the /ps/ proxy below.
     upstream powersync {
-        server powersync:8080;
+        server {{.Release.Name}}-powersync-api.{{.Release.Namespace}}.svc.cluster.local:8080;
     }
 
     # custom access log configuration
@@ -115,7 +114,6 @@ data:
       # Increase max body size to allow for video uploads
       client_max_body_size 100M;
     }
-{{- end }}
 
 ---
 kind: ConfigMap

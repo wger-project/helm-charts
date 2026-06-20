@@ -15,8 +15,6 @@ app:
     securityContext:
       fsGroup: 1000
   persistence:
-    # this will be overriden to `true` when nginx is enabled
-    enabled: false
     storageClass: null
     accessModes:
       - ReadWriteMany
@@ -37,12 +35,6 @@ app:
     limits:
       memory: 1Gi
       cpu: 500m
-  # when nginx is enabled persistent volumes are required
-  # and therefore automatically enabled
-  nginx:
-    enabled: false
-    image: nginx:stable
-    imagePullPolicy: IfNotPresent
   django:
     secret:
       name: null
@@ -77,8 +69,6 @@ app:
         dbuserKey: null
         # overrides app.django.existingDatabase.dbpw
         dbpwKey: null
-
-  #
   # JWT auth
   jwt:
     secret:
@@ -88,8 +78,7 @@ app:
     accessTokenLifetime: 10
     # The lifetime duration of the refresh token, in hours
     refreshTokenLifetime: 24
-  #
-  # Brute force login attacks
+  # axes Brute force login attacks
   # https://django-axes.readthedocs.io/en/latest/index.html
   axes:
     enabled: false
@@ -116,6 +105,11 @@ app:
       password: null
       update: false
 
+# nginx
+nginx:
+  image: nginx:stable
+  imagePullPolicy: IfNotPresent
+
 # powersync
 # for offline synchronization of the wger app
 powersync:
@@ -131,10 +125,6 @@ powersync:
     fsGroup: 1000
   configPath: null
   jwksURL: null
-
-
-
-
 
 # celery tasks
 # https://wger.readthedocs.io/en/latest/celery.html

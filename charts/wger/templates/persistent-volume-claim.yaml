@@ -1,5 +1,4 @@
 # yamllint disable rule:document-start
-{{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
 {{- if not .Values.app.persistence.existingClaim.enabled }}
 ---
 apiVersion: v1
@@ -67,5 +66,4 @@ spec:
   {{- if .Values.app.persistence.storageClass }}
   storageClassName:  {{ .Values.app.persistence.storageClass | quote }}
   {{- end }}
-{{- end }}
 {{- end }}

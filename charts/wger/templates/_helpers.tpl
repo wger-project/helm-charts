@@ -34,10 +34,6 @@ environment:
     value: "True"
   - name: DJANGO_DB_ENGINE
     value: {{ .Values.app.django.existingDatabase.engine | default "django.db.backends.postgresql" | quote }}
-  - name: DJANGO_DB_HOST
-    value: {{ .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
-  - name: DJANGO_DB_PORT
-    value: {{ .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
   # cache
   - name: DJANGO_CACHE_BACKEND
     value: "django_redis.cache.RedisCache"
@@ -64,11 +60,7 @@ environment:
     value: "http://127.0.0.1,https://127.0.0.1,http://localhost,https://localhost"
   {{- end }}
   - name: DJANGO_DEBUG
-    {{- if .Values.app.nginx.enabled }}
     value: "False"
-    {{- else }}
-    value: "True"
-    {{- end }}
   - name: DJANGO_MEDIA_ROOT
     value: "/home/wger/media"
   # axes
@@ -96,8 +88,7 @@ environment:
     value: {{ int .Values.app.jwt.accessTokenLifetime | default "10" | quote }}
   - name: REFRESH_TOKEN_LIFETIME
     value: {{ int .Values.app.jwt.refreshTokenLifetime | default "24" | quote }}
-  # others
-  {{- if .Values.app.nginx.enabled }}
+  # gunicorn settings
   - name: WGER_USE_GUNICORN
     value: "True"
     # workers (2x CPU Cores +1), rpi4 works well with 2 worker / 2 threads / 1 pod
@@ -105,7 +96,6 @@ environment:
     # accesslog: remote ip - client ip - x-real-ip - x-forward-for -
   - name: GUNICORN_CMD_ARGS
     value: "--timeout 240 --workers 4 --worker-class gthread --threads 3 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
-  {{- end }}
   # Users won't be able to contribute to exercises if their account age is
   # lower than this amount in days.
   - name: MIN_ACCOUNT_AGE_TO_TRUST
@@ -169,11 +159,16 @@ environment:
   value: {{ .value | quote }}
 {{- end }}
 {{- end }}
+
 {{/*
  database settings
  used for wger-app and celery containers
 */}}
 {{- define "database.settings" }}
+  - name: DJANGO_DB_HOST
+    value: {{ .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
+  - name: DJANGO_DB_PORT
+    value: {{ .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
   {{- if .Values.app.django.existingDatabase.enabled }}
     - name: DJANGO_DB_USER
       valueFrom:
@@ -212,7 +207,83 @@ environment:
           name: {{.Release.Name}}-postgres
           key: "POSTGRES_DB"
   {{- end }}
+  # powersync database
+  - name: PS_DATABASE_URI
+    value: "postgres://${DJANGO_DB_USER}:${DJANGO_DB_PASSWORD}@${DJANGO_DB_HOST}:${DJANGO_DB_PORT}/${DJANGO_DB_DATABASE}"
 {{- end }}
+
+{{/*
+ powersync settings
+*/}}
+{{- define "powersync.settings" }}
+  - name: JWT_PRIVATE_KEY
+    valueFrom:
+      secretKeyRef:
+        name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+        key: "private-key"
+  - name: JWT_PUBLIC_KEY
+    valueFrom:
+      secretKeyRef:
+        name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+        key: "public-key"
+  # This is the path (inside the container) to the YAML config file
+  # Alternatively the config path can be specified in the command
+  # e.g:
+  #   command: ['start', '-r', 'unified', '-c', '/config/powersync.yaml']
+  #
+  # The config file can also be specified in Base 64 encoding
+  # e.g.: Via an environment variable
+  #   POWERSYNC_CONFIG_B64: [base64 encoded content]
+  # or e.g.: Via a command line parameter
+  #    command: ['start', '-r', 'unified', '-c64', '[base64 encoded content]']
+  - name: POWERSYNC_CONFIG_PATH
+    {{- if .Values.powersync.configPath }}
+    value: {{ .Values.powersync.configPath | quote }}
+    {{- else }}
+    value: "/config/powersync.yaml"
+    {{- end }}
+  # Sync rules can be specified as base 64 encoded YAML
+  # e.g: Via an environment variable
+  # POWERSYNC_SYNC_RULES_B64: "[base64 encoded sync rules]"
+  # or e.g.: Via a command line parameter
+  #     command: ['start', '-r', 'unified', '-sync64', '[base64 encoded content]']
+  - name: PS_JWKS_URL
+    {{- if .Values.powersync.jwksURL }}
+    value: {{ .Values.powersync.jwksURL | quote }}
+    {{- else }}
+    value: "http://{{ .Release.Name }}-http:80/api/v2/powersync-keys"
+    {{- end }}
+  - name: PS_PORT
+    value: "8080"
+  - name: POWERSYNC_URL_PATH
+    value: "ps"
+  # database settings
+  - name: DJANGO_DB_HOST
+    value: {{ .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
+  - name: DJANGO_DB_PORT
+    value: {{ .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
+  {{- if .Values.app.django.existingDatabase.enabled }}
+    {{- if .Values.app.django.existingDatabase.existingSecret.dbnameKey }}
+    - name: DJANGO_DB_DATABASE
+      valueFrom:
+        secretKeyRef:
+          name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
+          key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+    {{- else }}
+    - name: DJANGO_DB_DATABASE
+      value: {{ .Values.app.django.existingDatabase.dbname | default "wger" | quote }}
+    {{- end }}
+  {{- else }}
+    - name: DJANGO_DB_DATABASE
+      valueFrom:
+        secretKeyRef:
+          name: {{.Release.Name}}-postgres
+          key: "POSTGRES_DB"
+  {{- end }}
+  - name: PS_STORAGE_PG_URI
+    value: "postgres://powersync_storage:powersync_password@${DJANGO_DB_HOST}:${DJANGO_DB_PORT}/${DJANGO_DB_DATABASE}"
+{{- end }}
+
 {{/*
  initContainer postgres command
  used for wger-app
@@ -225,6 +296,7 @@ environment:
 - until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done &&
   until nc -zvw10 {{.Release.Name}}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{.Release.Name}}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
 {{- end }}
+
 {{/*
  initContainer web command
  used for celery containers

@@ -16,7 +16,7 @@ For a more productive environment you have to enable nginx as a reverse proxy. T
 
 * Kubernetes 1.15+
 * Helm 3.0+
-* PV infrastructure on the cluster if persistence is needed (recommended)
+* PV infrastructure on the cluster persistence is needed
 * Ingress infrastructure for exposing the installation
 
 
@@ -141,9 +141,8 @@ Celery requires persistent volumes.
 
 | Name                        | Description | Type | Default Value |
 |-----------------------------|-------------|------|---------------|
-| `app.nginx.enabled`         | Enable nginx as a proxy. This will enable persistent volumes, gunicorn and disable `DJANGO_DEBUG` | Boolean | `false` |
-| `app.nginx.image`           | Image to use for the nginx proxy | String | `nginx:stable` |
-| `app.nginx.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
+| `nginx.image`           | Image to use for the nginx proxy | String | `nginx:stable` |
+| `nginx.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
 
 
 ## Ingress
@@ -170,15 +169,13 @@ Celery requires persistent volumes.
 
 | Name                                    | Description                                                        | Type | Default Value |
 |-----------------------------------------|--------------------------------------------------------------------|------|---------------|
-| `app.persistence.enabled`               | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
+| `app.persistence.existingClaim.enabled` | Whether to use a existing persistent storage claim. If `false`, the options from below are ignored | Boolean | `false` |
 | `app.persistence.existingClaim.media`   | Name of the pvc for the media data when existingClaim is enabled   | String     | `null` |
 | `app.persistence.existingClaim.static`  | Name of the pvc for the static data when existingClaim is enabled  | String     | `null` |
-| `app.persistence.existingClaim.enabled` | Whether to use a existing persistent storage claim. If `false`, the options from below are ignored | Boolean | `false` |
 | `app.persistence.storageClass`          | StorageClass for the PVCs                                          | String     | `""` |
 | `app.persistence.accessModes`           | Access modes for the PVCs                                          | Array      | `["ReadWriteMany"]` |
 | `app.persistence.size`                  | PVC size                                                           | String     | `8Gi` |
 | `app.persistence.annotations`           | Annotations to attach to the persistence objects (PVC and PV)      | Dictionary | `{}` |
-| `app.persistence.enabled`               | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
 
 
 ## Application Resources
