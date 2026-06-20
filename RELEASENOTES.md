@@ -8,6 +8,7 @@ https://github.com/wger-project/docker/commit/ec5893553d81445485e5d32f5a6be637a1
 * clean up unused volume definitions
 * new powersync service for offline sync with the app introduced
 * service and target ports changes
+* update the current jwt secret
 
 ## 0.3.0
 

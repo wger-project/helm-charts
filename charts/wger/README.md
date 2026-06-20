@@ -115,14 +115,16 @@ Celery requires persistent volumes.
 | `celery.flower.secret.password` | Password for the webinterface | String     | `randAlphaNum 50` |
 
 
-## SimpleJWT
+## JWT
 
-| Name                           | Description                              | Type   | Default Value     |
-|--------------------------------|------------------------------------------|--------|-------------------|
-| `app.jwt.secret.name`          | Name of the secret                       | String | `jwt`             |
-| `app.jwt.signing.key`          | Key for the `SIGNING_KEY`                | String | `randAlphaNum 50` |
-| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String | `10`              |
-| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String | `24`              |
+| Name                           | Description                              | Type    | Default Value     |
+|--------------------------------|------------------------------------------|---------|-------------------|
+| `app.jwt.secret.name`          | Name of the secret                       | String  | `jwt`             |
+| `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `true`            |
+| `app.jwt.secret.privateKey`    | Private Key for JWT                      | String  | a default key     |
+| `app.jwt.secret.publicKey`     | Public Key for JWT                       | String  | a default key     |
+| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`              |
+| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String  | `24`              |
 
 
 ## Axes
