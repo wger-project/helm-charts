@@ -120,9 +120,6 @@ Celery requires persistent volumes.
 | `celery.syncImages`             | sync exercise images          | Boolean    | `True`            |
 | `celery.syncVideos`             | sync exercise videos          | Boolean    | `True`            |
 | `celery.ingredientsFrom`        | source for ingredients, possible values `WGER`,`OFF` | String  | `WGER`  |
-| `celery.service.type`           | Sets the http service type    | String     | `ClusterIP`       |
-| `celery.service.port`           | Port for the service          | Integer    | `80`              |
-| `celery.service.annotations` | Annotations to attach to the service  | Dictionary | `{}`      |
 | `celery.flower.enabled`         | enable flower webinterface for celery | Boolean    | `False`   |
 | `celery.flower.secret.name`     | Name of the secret            | String     | `flower`          |
 | `celery.flower.secret.password` | Password for the webinterface | String     | `randAlphaNum 50` |
@@ -154,14 +151,34 @@ Celery requires persistent volumes.
 
 ## Nginx
 
-| Name                        | Description | Type | Default Value |
-|-----------------------------|-------------|------|---------------|
-| `nginx.image`           | Image to use for the nginx proxy | String | `nginx:stable` |
-| `nginx.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
-
+| Name                        | Description                           | Type       | Default Value  |
+|-----------------------------|---------------------------------------|------------|----------------|
+| `nginx.image`               | Image to use for the nginx proxy      | String     | `nginx:stable` |
+| `nginx.imagePullPolicy`     | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
+| `nginx.service.type`        | Sets the http service type            | String     | `ClusterIP`    |
+| `nginx.service.port`        | Port for the service                  | Integer    | `80`           |
+| `nginx.service.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
 
 ## Powersync
 
+| Name                        | Description                           | Type       | Default Value  |
+|-----------------------------|---------------------------------------|------------|----------------|
+| `powersync.image.registry`    | Image registry                       | String     | `docker.io`    |
+| `powersync.image.repository`  | Image repostory                      | String     | `journeyapps/powersync-service` |
+| `powersync.image.tag`         | Image tag                            | String     | `latest`       |
+| `powersync.image.PullPolicy`  | Image pull policy                    | String     | `IfNotPresent` |
+| `powersync.annotations`       | Annotations to attach to the service | Dictionary | `{}`           |
+| `powersync.replicas`          | Number of webserver instances that should be running | Integer | `1` |
+| `powersync.replicasWorker`    | Number replica workers               | Integer    | `1`            |
+| `powersync.securityContext`   | Pod security context                 | Object     | see [values.yaml](charts/wger/values.yaml) |
+| `powersync.serviceApi.type`        | Sets the http service type            | String     | `ClusterIP`    |
+| `powersync.serviceApi.port`        | Port for the service                  | Integer    | `8080`         |
+| `powersync.serviceApi.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
+| `powersync.servicePrometheus.type`        | Sets the http service type            | String     | `ClusterIP`    |
+| `powersync.servicePrometheus.port`        | Port for the service                  | Integer    | `9090`         |
+| `powersync.servicePrometheus.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
+| `powersync.configPath`        | Path to the powersync config                      | String     | `/config/powersync.yaml` |
+| `powersync.jwksURL`           | URI for JWK auth                     | String     | `http://{{ .Release.Name }}-http:80/api/v2/powersync-keys` |
 
 
 ## Ingress
@@ -190,12 +207,7 @@ Celery requires persistent volumes.
 
 ## Application Resources
 
-| Name                            | Description | Type | Default Value |
-|---------------------------------|-------------|------|---------------|
-| `app.resources.requests.memory` | Amount of memory that the app requests for running. Keep this value low to allow the pod to get admitted on a node. | String | `128Mi` |
-| `app.resources.requests.cpu`    | Amount of CPU that the app requests for running. Keep this value low to allow the pod to get admitted on a node. | String | `100m` |
-| `app.resources.limits.memory`   | Maximum amount of memory that the app is allowed to use. | String | `512Mi` |
-| `app.resources.limits.cpu`      | Maximum amount of CPU that the app is allowed to use.    | String | `500m`  |
+Most containers have their `resources` setting: see [values.yaml](values.yaml).
 
 
 ### Environment Variables
@@ -455,18 +467,6 @@ Generally:
 * if you have a problem, create an issue in [the issue tracker](https://github.com/wger-project/helm-charts/issues)
 * if you have a cool idea, create a fork and send pull requests
 * assure that your code is well-formed (hint: [`helm lint`](https://helm.sh/docs/helm/helm_lint/) is a useful command). This is enforced using continuous integration.
-
-
-## Running a highly available setup
-
-The deployment can be scaled using `app.global.replicas` to allow for more web server replicas. Persistence should be enabled as well to ensure that the different webservers have access to the same static and media shares.
-
-Generally persistent volumes needs to be configured depending on your setup.
-
-
-## Developing locally
-
-Please have a look at [DEVEL.md](/DEVEL.md).
 
 
 ## Contact
