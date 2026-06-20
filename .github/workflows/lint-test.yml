@@ -49,15 +49,15 @@ jobs:
         run: ct lint --target-branch ${{ github.event.repository.default_branch }}
       
       # https://github.com/marketplace/actions/kind-cluster
-      - name: Create kind cluster
-        if: steps.list-changed.outputs.changed == 'true'
-        uses: helm/kind-action@v1.14.0
-
       #
       # disabled chart install as the kind server doesn't support ReadWriteMany storage
       # what we need for celery
       # https://github.com/kubernetes-sigs/kind/issues/1487
-      #
+
+      # - name: Create kind cluster
+      #   if: steps.list-changed.outputs.changed == 'true'
+      #   uses: helm/kind-action@v1.14.0
+
       # - name: Run chart-testing (install)
       #   if: steps.list-changed.outputs.changed == 'true'
       #   run: ct install --target-branch ${{ github.event.repository.default_branch }}
