@@ -15,8 +15,6 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-app
       annotations:
-        # every helm upgrade restarts the deployment
-        rollme: {{ randAlphaNum 5 | quote }}
     {{- with .Values.app.global.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
@@ -34,17 +32,13 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
-            {{- include "database.settings" . | indent 8 }}
+            {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
-            - name: SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "signing-key"
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -71,7 +65,8 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            # {{/*- if .Values.redis.auth.enabled */}}
+            {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -80,15 +75,15 @@ spec:
                   key: "password"
             {{- end }}
           ports:
-            - containerPort: 8000
+            - name: app
+              containerPort: 8000
+              protocol: TCP
+          {{- if .Values.app.resources }}
           resources:
-            requests:
-              memory: {{ .Values.app.resources.requests.memory }}
-              cpu: {{ .Values.app.resources.requests.cpu }}
-            limits:
-              memory: {{ .Values.app.resources.limits.memory }}
-              cpu: {{ .Values.app.resources.limits.cpu }}
-          {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
+            {{- with .Values.app.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
           volumeMounts:
             - name: wger-media
               mountPath: /home/wger/media
@@ -96,47 +91,16 @@ spec:
             - name: wger-static
               mountPath: /home/wger/static
               readOnly: false
-            {{- if .Values.app.persistence.existingClaim.code }}
-            - name: wger-code
-              mountPath: /home/wger/src
-              readOnly: false
-            {{- end }}
             {{- if .Values.celery.enabled }}
             - name: wger-celery-beat
               mountPath: /home/wger/beat
               readOnly: false
             {{- end }}
-          {{- end }} # {{/*- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) */}}
-        # nginx container
-        {{- if .Values.app.nginx.enabled }}
-        - name: nginx
-          image: {{ .Values.app.nginx.image }}
-          imagePullPolicy: {{ .Values.app.nginx.imagePullPolicy }}
-          env:
-            - name: TZ
-              value: {{ .Values.app.timezone | default "UTC" | quote }}
-          ports:
-            - containerPort: 8080
-              protocol: TCP
-          volumeMounts:
-            - name: nginx-conf
-              mountPath: /etc/nginx/conf.d/
-            - name: wger-media
-              mountPath: /var/www/html/media
-              readOnly: true
-            - name: wger-static
-              mountPath: /var/www/html/static
-              readOnly: true
-          resources:
-            requests:
-              cpu: 10m
-        {{- end }} # {{/*- if .Values.app.nginx.enabled */}}
       initContainers:
         - name: init-container
           image: docker.io/busybox:latest
           command:
           {{- include "initContainer.pgonly.command" . | indent 10 }}
-      {{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
       volumes:
         - name: wger-media
           persistentVolumeClaim:
@@ -144,25 +108,157 @@ spec:
         - name: wger-static
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
-          {{- if .Values.app.persistence.existingClaim.code }}
-        - name: wger-code
-          persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
-          {{- end }}
-          {{- if .Values.celery.enabled }}
+        {{- if .Values.celery.enabled }}
         - name: wger-celery-beat
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
+        {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-nginx
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.app.global.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-nginx
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-nginx
+      annotations:
+    {{- with .Values.app.global.annotations }}
+      {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote}}
+      {{- end }}
+    {{- end }}
+    spec:
+      {{- with .Values.app.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        # nginx container
+        - name: nginx
+          image: {{ .Values.nginx.image }}
+          imagePullPolicy: {{ .Values.nginx.imagePullPolicy }}
+          env:
+            - name: TZ
+              value: {{ .Values.app.timezone | default "UTC" | quote }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/
+            - name: wger-media
+              mountPath: /wger/media
+              readOnly: true
+            - name: wger-static
+              mountPath: /wger/static
+              readOnly: true
+          {{- if .Values.nginx.resources }}
+          resources:
+            {{- with .Values.nginx.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
-        {{- if .Values.app.nginx.enabled }}
+      volumes:
+        - name: wger-media
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
+        - name: wger-static
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
         - name: nginx-conf
           configMap:
             name: {{ .Release.Name }}-nginx-configmap
-        {{- end }}
-      {{- end }} # {{/*- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) */}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-powersync
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.powersync.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-powersync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-powersync
+      annotations:
+    {{- with .Values.powersync.annotations }}
+      {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote}}
+      {{- end }}
+    {{- end }}
+    spec:
+      {{- with .Values.powersync.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: powersync
+          image: "{{ .Values.powersync.image.registry }}/{{ .Values.powersync.image.repository }}:{{ .Values.powersync.image.tag }}"
+          imagePullPolicy: {{ .Values.powersync.image.PullPolicy }}
+          env:
+            {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
+          #
+          # In Kubernetes commands overrides the entrypoint and args adds additional arguments to the entrypoint (command)
+          # so in this comment "command" is ment do be "args"
+          #
+          # The unified service runs an API server and replication worker in the same container.
+          # These services can be executed in different containers by using individual entry commands e.g.
+          # Start only the API server with
+          #   command: ['start', '-r', 'api']
+          # Start only the replication worker with
+          #   command: ['start', '-r', 'sync']
+
+          # Migrations occur automatically by default. Default migrations can be disabled in `powersync.yaml`:
+          #  migrations:
+          #   disable_auto_migration: true
+          #
+          # Service migrations can be manually triggered by starting a container with the
+          # following command:
+          #     command: ['migrate', 'up']
+          # Note that this container must finish executing before starting the sync or unified container.
+          args: ["start", "-r", "unified"]
+          ports:
+            - name: api
+              containerPort: 8080
+              protocol: TCP
+            - name: prometheus
+              containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - name: powersync-conf
+              mountPath: /config
+          {{- if .Values.powersync.resources }}
+          resources:
+            {{- with .Values.powersync.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+      initContainers:
+        - name: init-container
+          image: docker.io/busybox:latest
+          command:
+          {{- include "initContainer.web.command" . | indent 10 }}
+      volumes:
+        - name: powersync-conf
+          configMap:
+            name: {{ .Release.Name }}-powersync-configmap
 {{- if .Values.celery.enabled }}
-# celery only works with persistence enabled
-{{- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -181,8 +277,6 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-celery
       annotations:
-        # every helm upgrade restarts the deployment
-        rollme: {{ randAlphaNum 5 | quote }}
     {{- with .Values.celery.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
@@ -200,17 +294,13 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
-            {{- include "database.settings" . | indent 8 }}
+            {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
-            - name: SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "signing-key"
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -237,7 +327,8 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            # {{/*- if .Values.redis.auth.enabled */}}
+            {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -250,11 +341,12 @@ spec:
             - name: wger-celery-beat
               mountPath: /home/wger/beat
               readOnly: false
-            {{- if .Values.app.persistence.existingClaim.code }}
-            - name: wger-code
-              mountPath: /home/wger/src
-              readOnly: false
+          {{- if .Values.celery.resources }}
+          resources:
+            {{- with .Values.celery.resources }}
+              {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- end }}
         # celery flower
         {{- if .Values.celery.flower.enabled }}
         - name: celery-flower
@@ -262,17 +354,13 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
-            {{- include "database.settings" . | indent 8 }}
+            {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
-            - name: SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "signing-key"
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -299,47 +387,35 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            # {{/*- if .Values.redis.auth.enabled */}}
+            {{- end }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.celery.flower.secret.name | default "flower" | quote }}
                   key: "password"
           command: ["/start-flower"]
-          ports:
-            - containerPort: 5555
-          volumeMounts:
-            {{- if .Values.app.persistence.existingClaim.code }}
-            - name: wger-code
-              mountPath: /home/wger/src
-              readOnly: false
+          {{- if .Values.celery.flower.resources }}
+          resources:
+            {{- with .Values.celery.flower.resources }}
+              {{- toYaml . | nindent 12 }}
             {{- end }}
-        {{- end }} # {{/*- if .Values.celery.flower.enabled */}}
+          {{- end }}
+          ports:
+            - name: flower
+              containerPort: 5555
+              protocol: TCP
+        # {{/*- if .Values.celery.flower.enabled */}}
+        {{- end }}
       initContainers:
         - name: init-container
           image: docker.io/busybox:latest
           command:
           {{- include "initContainer.web.command" . | indent 10 }}
       volumes:
-        - name: wger-media
-          persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
-        - name: wger-static
-          persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
-        {{- if .Values.app.persistence.existingClaim.code }}
-        - name: wger-code
-          persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
-        {{- end }}
         - name: wger-celery-beat
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
-        {{- if .Values.app.nginx.enabled }}
-        - name: nginx-conf
-          configMap:
-            name: {{ .Release.Name }}-nginx-configmap
-        {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -350,8 +426,6 @@ metadata:
     app.kubernetes.io/name: {{ .Release.Name }}
   {{- with .Values.celery.annotations }}
   annotations:
-    # every helm upgrade restarts the deployment
-      rollme: {{ randAlphaNum 5 | quote }}
     {{- range $key, $value := . }}
       {{ $key }}: {{ $value | quote}}
     {{- end }}
@@ -366,8 +440,6 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-celery-worker
       annotations:
-        # every helm upgrade restarts the deployment
-        rollme: {{ randAlphaNum 5 | quote }}
     {{- with .Values.celery.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
@@ -385,17 +457,13 @@ spec:
           imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
-            {{- include "database.settings" . | indent 8 }}
+            {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
-            - name: SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "signing-key"
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
@@ -422,7 +490,8 @@ spec:
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
             - name: CELERY_BACKEND
               value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- end }} # {{/*- if .Values.redis.auth.enabled */}}
+            # {{/*- if .Values.redis.auth.enabled */}}
+            {{- end }}
             {{- if .Values.celery.flower.enabled }}
             - name: CELERY_FLOWER_PASSWORD
               valueFrom:
@@ -435,12 +504,12 @@ spec:
             - name: wger-media
               mountPath: /home/wger/media
               readOnly: false
-            # special mount to override the wger code from the container
-            {{- if .Values.app.persistence.existingClaim.code }}
-            - name: wger-code
-              mountPath: /home/wger/src
-              readOnly: false
+          {{- if .Values.celery.resources }}
+          resources:
+            {{- with .Values.celery.resources }}
+              {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- end }}
       initContainers:
       - name: init-container
         image: docker.io/busybox:latest
@@ -450,22 +519,8 @@ spec:
         - name: wger-media
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
-        - name: wger-static
-          persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
-          {{- if .Values.app.persistence.existingClaim.code }}
-        - name: wger-code
-          persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.code | quote }}
-          {{- end }}
         - name: wger-celery-beat
           persistentVolumeClaim:
             claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
-        {{- if .Values.app.nginx.enabled }}
-        - name: nginx-conf
-          configMap:
-            name: {{ .Release.Name }}-nginx-configmap
-        {{- end }}
----
-{{- end }} # {{/*- if .Values.celery.enabled */}}
-{{- end }} # {{/*- if or (.Values.app.persistence.enabled) (.Values.app.nginx.enabled) */}}
+# {{/*- if .Values.celery.enabled */}}
+{{- end }}

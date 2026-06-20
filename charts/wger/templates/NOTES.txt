@@ -1,15 +1,37 @@
 
 Starting the container may take some time, you can watch the process in the logs:
 
+```
 kubectl -n {{ .Release.Namespace }} logs -f -l app.kubernetes.io/name={{ .Release.Name }}-app -c init-container
 kubectl -n {{ .Release.Namespace }} logs -f -l app.kubernetes.io/name={{ .Release.Name }}-app -c wger
-
+```
 {{- if not .Values.app.django.existingDatabase.enabled }}
+
 Get the postgres superuser passwords:
 
+```
 kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-postgres -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d
+```
 
 Get the postgres user passwords:
 
+```
 kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-postgres -o jsonpath='{.data.USERDB_PASSWORD}' | base64 -d
+```
 {{- end }}
+
+After the first installation you need to generate your own JWT keypair, this is used from the wger companion app
+to authenticate for offline synchronisation:
+
+```
+export POD=$(kubectl -n {{ .Release.Namespace }} get pods -l "app.kubernetes.io/name={{ .Release.Name }}-app" -o jsonpath="{.items[0].metadata.name}")
+kubectl -n {{ .Release.Namespace }} exec -it pod/$POD -c wger -- ./manage.py generate-jwt-keys
+```
+
+The pair needs to be saved in the `jwt` secret, you can add it in your `values.yaml`, but you need to set
+
+```
+  .Values.app.jwt.secret.update: true
+```
+
+for it to update the existing secret with the default value inside.

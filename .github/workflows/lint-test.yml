@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up Helm
-        uses: azure/setup-helm@v3
+        uses: azure/setup-helm@v5.0.0
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
 
@@ -28,13 +28,13 @@ jobs:
         run: |
           helm repo add groundhog2k https://groundhog2k.github.io/helm-charts
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6.0.0
         with:
-          python-version: '3.10'
+          python-version: '3.x'
           check-latest: true
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.6.0
+        uses: helm/chart-testing-action@v2.8.0
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -48,10 +48,16 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         run: ct lint --target-branch ${{ github.event.repository.default_branch }}
       
-      - name: Create kind cluster
-        if: steps.list-changed.outputs.changed == 'true'
-        uses: helm/kind-action@v1.8.0
+      # https://github.com/marketplace/actions/kind-cluster
+      #
+      # disabled chart install as the kind server doesn't support ReadWriteMany storage
+      # what we need for celery
+      # https://github.com/kubernetes-sigs/kind/issues/1487
 
-      - name: Run chart-testing (install)
-        if: steps.list-changed.outputs.changed == 'true'
-        run: ct install --target-branch ${{ github.event.repository.default_branch }}
+      # - name: Create kind cluster
+      #   if: steps.list-changed.outputs.changed == 'true'
+      #   uses: helm/kind-action@v1.14.0
+
+      # - name: Run chart-testing (install)
+      #   if: steps.list-changed.outputs.changed == 'true'
+      #   run: ct install --target-branch ${{ github.event.repository.default_branch }}

@@ -15,8 +15,6 @@ app:
     securityContext:
       fsGroup: 1000
   persistence:
-    # this will be overriden to `true` when nginx is enabled
-    enabled: false
     storageClass: null
     accessModes:
       - ReadWriteMany
@@ -37,12 +35,10 @@ app:
     limits:
       memory: 1Gi
       cpu: 500m
-  # when nginx is enabled persistent volumes are required
-  # and therefore automatically enabled
-  nginx:
-    enabled: false
-    image: nginx:stable
-    imagePullPolicy: IfNotPresent
+  service:
+    annotations: {}
+    type: ClusterIP
+    port: 8000
   django:
     secret:
       name: null
@@ -77,19 +73,22 @@ app:
         dbuserKey: null
         # overrides app.django.existingDatabase.dbpw
         dbpwKey: null
-
-  #
   # JWT auth
   jwt:
     secret:
-      name: null
-      key: null
+      update: false
+      name: "jwt"
+      # JWT keys, used by the mobile app. This default NEEDS to be changed.
+      # Generate fresh keys with: docker compose exec web ./manage.py generate-jwt-keys
+      # @todo autogenerate a new key and save it into the secret when installing
+      # currently there is a hardcoded default key so that the installation works
+      privateKey: "eyJhbGciOiAiUlMyNTYiLCAia3R5IjogIlJTQSIsICJuIjogInFhdVVnb0ZXenRNcjVEYks3bFIxZXUxazJrdllyblJkRGh1NDFyWnFLeWhDWkJya0FTS0d0N25KbVUwVEpKb1d0cFF2eHVvc0ZGeW1BMUhXQnNaY0dtVlcxdlowdDJlazl4THg5bjg2UWRIVWc1MktsRG9ZUzNtRTFaWW5BYzJfRDM3UmxyQkVxRXpuSnBNeDJ3VkpLcVdRZHlWSWh6Q082YzRnOWN3VExGbUhkVXVURXMzdDNBN1MyNENrUkM2TE1KSFFvRTJzay1uWlJyZE9fTHVNNUJJcVp2b1dWUC1Salp4OWk4OGdaaDhvOEcyWW1xZnMwczRzYW1fam85bmFaYlo4aFBFQ0FZdnZUZ29ObzRHMGpXZERZeGdPWHlXTE80bTk1SEdMSFJMZjZ5M29vdkZad2QwN2FFbThEU3dBX3hsY1V4WHNNZ0ZlYVVVZkp2NEV4USIsICJlIjogIkFRQUIiLCAiZCI6ICJQZXVwNjhUakZ1RVhaQmFoRWNDT0RWcEUwNndaZkhWb0hvVjhmQk9maEhlUlh6STNJcmprZkhtWHV0UlhsNlNLaElCcFBVbHA0OVo2R2IwTWhIVncySXRDV1hvaFYydkNWdzg1Y2RHMXc1NmQxWml4b2UzZnZ1LXV6RG9icXp0WXJvR0VZTi1jZHVWMS1HeUFwZU4wYzlWdmR5UUtwNWZQbUVGTFl4amlxR3k5UUhyTldpcGJmZXdPUGY0YUl4X05VRnE3R1BsUk1yalA4VEhvSzNPOVNfXzJpR09LRVpINDFUWkpscVBZX0s5dFNkbFNKd1FPWEtwOFc2ZUdGT3l2MElueVhsUXhHb0ZBWVNrUC12WTlWQy1vTUtzdmhocm1GeGM0VlU2OUZ3VWFJYUdaOU9jaXF4M3B0aE9sU1drRjFhbEtxNWFJZ2VHbEUzM2VyNGthSXciLCAicCI6ICI1WDN0QzN4Z0hwbm91U1JwSlg4c0ZWRm5vamhxMWJoWkF3c3VRaXBxWWgtZmJNRGI4a2NTTy1fT3BEMExNekYzcHp0dVNRb0NZOFc0WjI0TEJ6cFRuUlFid0JrYWt3VDMybmZIU1J0d3RnM1ZjWkkxZFNsdHgtclhEcHlBMDNHa1RvLUxEZkp1UzF0a1FYQXB0OTBkcnJHMndjQ25oRXc4bGx2SzR2cWRucHMiLCAicSI6ICJ2VVM2V2QtY2trTUJMVmJvSkVaVnRtMlFLTFE2dV9oZEFrbTFWa3dGajMxZWZWRTlFRWRSa0F0dGVoOWh2ZzBkM2FXVDZ1bFQ4YlpubWo3WkFjNG55aVdwOTlFd0k5U0hFX01UUE11YVZSeUw5SmFIX2R0Uk5nVGE5UV9hZUs2d1pkY3RwLUZRT1lteVlDWmhzRnVOTG45TFJ3UklJOVJ0YlBXYW55X01jQjgiLCAiZHAiOiAiWjFNNkhmakN3aVJqcnJBaEV6dmQyajlMbkxNd0RzZXdjX2xkdTNhamJVaDFuQjU5S09rczRZV0lFVlJXclpieEczOWJtVkVEWUc2T0p5dFpsY2lDQ3ZBWnluVEREVHlvWjFtVWhXcndaVmQzS1dvOTNXRm94eUVKOE04d0JZTmVDZTBCRzZkeVYwVnZyekxUNWEtTmhMRUk2dFZWMXZBSU8xNWF5N1V3c0U4IiwgImRxIjogIktsclpBUWZEZUEtNmtiVGpHa3NMSDFvQmFycDZjbG93SmpUc2ViVmxnU2pqSGxReHdCVFZzZEI4M1Zsc2ZDVmZTNXlrTDJ1cnQybkVZWVl5OWU1MmhReE1yd0tITFYyQUpQeS1qMXBZM1RjWU10SUUtTkE5cWtNSDVOTjVab3hoT1VrZ0ZIT2RpbUxBSWpnMG9FeThtVzB2SVdOWjZYcS1TaVhrUmo5aUZxMCIsICJxaSI6ICJzSV84RTh0MTBsRDY2NTh3UXRpY19BaUUxOVk1Rms0SDJWbnpGclBhVU04aWFNaVc2eUZxMFZuN3RXa2RTWS1STTB1SFMwdmVmSEcyZTBKSWxEanhBUmZWZUcwNTFyVUNRZjBkSnR4U0ZDQUp2eGxMRTZsYjZOQlUwZVIyMld6bjVob1ZZTVpHZnQ5QnA0SlVOOHJkMF9lMm1kSjhxc09wM1NLQ3NTSTByUkkiLCAia2lkIjogInBvd2Vyc3luYyJ9"
+      publicKey: "eyJhbGciOiAiUlMyNTYiLCAia3R5IjogIlJTQSIsICJuIjogInFhdVVnb0ZXenRNcjVEYks3bFIxZXUxazJrdllyblJkRGh1NDFyWnFLeWhDWkJya0FTS0d0N25KbVUwVEpKb1d0cFF2eHVvc0ZGeW1BMUhXQnNaY0dtVlcxdlowdDJlazl4THg5bjg2UWRIVWc1MktsRG9ZUzNtRTFaWW5BYzJfRDM3UmxyQkVxRXpuSnBNeDJ3VkpLcVdRZHlWSWh6Q082YzRnOWN3VExGbUhkVXVURXMzdDNBN1MyNENrUkM2TE1KSFFvRTJzay1uWlJyZE9fTHVNNUJJcVp2b1dWUC1Salp4OWk4OGdaaDhvOEcyWW1xZnMwczRzYW1fam85bmFaYlo4aFBFQ0FZdnZUZ29ObzRHMGpXZERZeGdPWHlXTE80bTk1SEdMSFJMZjZ5M29vdkZad2QwN2FFbThEU3dBX3hsY1V4WHNNZ0ZlYVVVZkp2NEV4USIsICJlIjogIkFRQUIiLCAia2lkIjogInBvd2Vyc3luYyJ9"
     # The lifetime duration of the access token, in minutes
     accessTokenLifetime: 10
     # The lifetime duration of the refresh token, in hours
     refreshTokenLifetime: 24
-  #
-  # Brute force login attacks
+  # axes Brute force login attacks
   # https://django-axes.readthedocs.io/en/latest/index.html
   axes:
     enabled: false
@@ -116,6 +115,53 @@ app:
       password: null
       update: false
 
+# nginx
+nginx:
+  image: nginx:stable
+  imagePullPolicy: IfNotPresent
+  service:
+    annotations: {}
+    type: ClusterIP
+    port: 80
+  resources: null
+    # requests:
+    #   memory: 512Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 1Gi
+    #   cpu: 500m
+
+# powersync
+# for offline synchronization of the wger app
+powersync:
+  image:
+    registry: docker.io
+    repository: journeyapps/powersync-service
+    tag: latest
+    PullPolicy: IfNotPresent
+  annotations: {}
+  replicas: 1
+  replicasWorker: 1
+  securityContext:
+    fsGroup: 1000
+  serviceApi:
+    annotations: {}
+    type: ClusterIP
+    port: 8080
+  servicePrometheus:
+    annotations: {}
+    type: ClusterIP
+    port: 9090
+  configPath: null
+  jwksURL: null
+  resources: null
+    # requests:
+    #   memory: 512Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 1Gi
+    #   cpu: 500m
+
 # celery tasks
 # https://wger.readthedocs.io/en/latest/celery.html
 celery:
@@ -133,12 +179,26 @@ celery:
   # so that we don't overwhelm the Open Food Facts servers. Needs to have USE_CELERY
   # set to true
   ingredientsFrom: WGER
+  resources: null
+    # requests:
+    #   memory: 512Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 1Gi
+    #   cpu: 500m
   # flower the webinterface for celery
   flower:
     enabled: false
     secret:
       name: null
       password: null
+    resources: null
+    # requests:
+    #   memory: 512Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 1Gi
+    #   cpu: 500m
 
 ingress:
   enabled: false
@@ -146,11 +206,6 @@ ingress:
   url: fit.example.com
   tls: true
   annotations: {}
-
-service:
-  annotations: {}
-  type: ClusterIP
-  port: 8000
 
 # PostgreSQL Settings for groundhog2k chart. Only a minimum has been specified below.
 # For more options, see https://github.com/groundhog2k/helm-charts/tree/master/charts/postgres
@@ -176,15 +231,16 @@ postgres:
   # some database migration in django requires this
   # otherwise it was not able to create the database
   extraScripts: wger-pg-init
+  args: ["-c", "wal_level=logical", "-c", "shared_buffers=256MB", "-c", "effective_cache_size=768MB", "-c", "work_mem=8MB", "-c", "random_page_cost=1.1", "-c", "max_connections=30"]
   service:
     port: 5432
   resources:
     limits:
       cpu: 500m
-      memory: 512Mi
+      memory: 1280Mi
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 1032Mi
   ## Storage parameters
   storage:
     ##  Set persistentVolumenClaimName to reference an existing PVC

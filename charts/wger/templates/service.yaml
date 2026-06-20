@@ -1,27 +1,96 @@
 ---
+# nginx
 apiVersion: v1
 kind: Service
 metadata:
   name: {{.Release.Name}}-http
   namespace: {{.Release.Namespace}}
   labels:
-    app.kubernetes.io/name: {{.Release.Name}}
-  {{- with .Values.service.annotations }}
+    app.kubernetes.io/name: {{.Release.Name}}-http
+  {{- with .Values.nginx.service.annotations }}
   annotations:
   {{- range $key, $value := . }}
     {{ $key }}: {{ $value | quote}}
   {{- end }}
   {{- end }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.nginx.service.type }}
   ports:
     - name: http
       protocol: TCP
-      port: {{ .Values.service.port }}
-      {{- if .Values.app.nginx.enabled }}
-      targetPort: 8080
-      {{- else }}
+      port: {{ .Values.nginx.service.port }}
+      targetPort: 80
+  selector:
+    app.kubernetes.io/name: {{ .Release.Name }}-nginx
+---
+# wger django app
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Release.Name}}-app
+  namespace: {{.Release.Namespace}}
+  labels:
+    app.kubernetes.io/name: {{.Release.Name}}-app
+  {{- with .Values.app.service.annotations }}
+  annotations:
+  {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote}}
+  {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.app.service.type }}
+  ports:
+    - name: app
+      protocol: TCP
+      port: {{ .Values.app.service.port }}
       targetPort: 8000
-      {{- end }}
   selector:
     app.kubernetes.io/name: {{ .Release.Name }}-app
+---
+# powersync api
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Release.Name}}-powersync-api
+  namespace: {{.Release.Namespace}}
+  labels:
+    app.kubernetes.io/name: {{.Release.Name}}-powersync-api
+  {{- with .Values.powersync.serviceApi.annotations }}
+  annotations:
+  {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote}}
+  {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.powersync.serviceApi.type }}
+  ports:
+    - name: api
+      protocol: TCP
+      port: {{ .Values.powersync.serviceApi.port }}
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: {{ .Release.Name }}-powersync
+---
+# powersync prometheus exporter
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Release.Name}}-powersync-prometheus
+  namespace: {{.Release.Namespace}}
+  labels:
+    app.kubernetes.io/name: {{.Release.Name}}-powersync-prometheus
+  {{- with .Values.powersync.servicePrometheus.annotations }}
+  annotations:
+  {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote}}
+  {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.powersync.servicePrometheus.type }}
+  ports:
+    - name: app
+      protocol: TCP
+      port: {{ .Values.powersync.servicePrometheus.port }}
+      targetPort: 9090
+  selector:
+    app.kubernetes.io/name: {{ .Release.Name }}-powersync

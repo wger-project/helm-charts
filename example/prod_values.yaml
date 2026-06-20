@@ -16,10 +16,6 @@
 # App settings
 app:
   timezone: "Etc/Zulu"
-  global:
-    replicas: 1
-    # image:
-    #   PullPolicy: IfNotPresent
   mail:
     enabled: true
     server: mail.example.com
@@ -27,8 +23,17 @@ app:
     from_email: "wger@example.com"
     secret:
       password: XXXXXXXXXXXXXXXXXXXXXXX
-  nginx:
-    enabled: true
+  # JWT auth
+  jwt:
+    secret:
+      update: true
+      # JWT keys, used by the mobile app. This default NEEDS to be changed.
+      # Generate fresh keys with: docker compose exec web ./manage.py generate-jwt-keys
+      # @todo autogenerate a new key and save it into the secret when installing
+      # currently there is a hardcoded default key so that the installation works
+      privateKey: "my_private_key"
+      publicKey: "my_public_key"
+
   axes:
     enabled: true
     failureLimit: 10
@@ -39,7 +44,6 @@ app:
     # order of magnitude from last proxy for the real ip
     ipwareMetaPrecedenceOrder: "X_FORWARDED_FOR,REMOTE_ADDR"
   persistence:
-    enabled: true
     existingClaim:
       enabled: true
       media: wger-media

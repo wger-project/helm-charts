@@ -1,5 +1,24 @@
 https://github.com/wger-project/docker/commit/ec5893553d81445485e5d32f5a6be637a12fd492
 
+## 1.0.0
+
+This is a major upgrade and has breaking changes.
+Please review the [`values.yaml`](https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml)
+file and update your own.
+
+* upgrade to wger 2.6
+* JWT Signing Key Setting has been removed
+* nginx and persistent storage is now mandatory
+* nginx get's it's own deployment
+* clean up unused volume definitions
+* new powersync service for offline sync with the app introduced
+* service and target ports changes
+* update the current jwt secret
+* add resource settings for most containers
+* separate service settings
+* minor upgrade postgres to 15.18
+* path in nginx for the static and media files changed
+
 ## 0.3.0
 
 * upgrade to wger 2.5

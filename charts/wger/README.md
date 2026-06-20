@@ -16,7 +16,7 @@ For a more productive environment you have to enable nginx as a reverse proxy. T
 
 * Kubernetes 1.15+
 * Helm 3.0+
-* PV infrastructure on the cluster if persistence is needed (recommended)
+* PV infrastructure on the cluster persistence is needed
 * Ingress infrastructure for exposing the installation
 
 
@@ -95,6 +95,16 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.django.existingDatabase.existingSecret.dbuserKey` | Key containing the database user     | String | `null` |
 | `app.django.existingDatabase.existingSecret.dbpwKey`   | Key containing the database password | String | `null` |
 
+
+### Service for the wger app
+
+| Name                      | Description                          | Type       | Default Value |
+|---------------------------|--------------------------------------|------------|---------------|
+| `app.service.type`        | Sets the http service type           | String     | `ClusterIP`   |
+| `app.service.port`        | Port for the service                 | Integer    | `80`          |
+| `app.service.annotations` | Annotations to attach to the service | Dictionary | `{}`          |
+
+
 ### Celery
 
 Celery requires persistent volumes.
@@ -110,19 +120,21 @@ Celery requires persistent volumes.
 | `celery.syncImages`             | sync exercise images          | Boolean    | `True`            |
 | `celery.syncVideos`             | sync exercise videos          | Boolean    | `True`            |
 | `celery.ingredientsFrom`        | source for ingredients, possible values `WGER`,`OFF` | String  | `WGER`  |
-| `celery.flower.enabled`         | enable flower webinterface for celery                | Boolean | `False` |
+| `celery.flower.enabled`         | enable flower webinterface for celery | Boolean    | `False`   |
 | `celery.flower.secret.name`     | Name of the secret            | String     | `flower`          |
 | `celery.flower.secret.password` | Password for the webinterface | String     | `randAlphaNum 50` |
 
 
-## SimpleJWT
+## JWT
 
-| Name                           | Description                              | Type   | Default Value     |
-|--------------------------------|------------------------------------------|--------|-------------------|
-| `app.jwt.secret.name`          | Name of the secret                       | String | `jwt`             |
-| `app.jwt.secret.key`           | Key for the `SIGNING_KEY`                | String | `randAlphaNum 50` |
-| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String | `10`              |
-| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String | `24`              |
+| Name                           | Description                              | Type    | Default Value     |
+|--------------------------------|------------------------------------------|---------|-------------------|
+| `app.jwt.secret.name`          | Name of the secret                       | String  | `jwt`             |
+| `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `false`           |
+| `app.jwt.secret.privateKey`    | Private Key for JWT                      | String  | a default key     |
+| `app.jwt.secret.publicKey`     | Public Key for JWT                       | String  | a default key     |
+| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`              |
+| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String  | `24`              |
 
 
 ## Axes
@@ -139,11 +151,34 @@ Celery requires persistent volumes.
 
 ## Nginx
 
-| Name                        | Description | Type | Default Value |
-|-----------------------------|-------------|------|---------------|
-| `app.nginx.enabled`         | Enable nginx as a proxy. This will enable persistent volumes, gunicorn and disable `DJANGO_DEBUG` | Boolean | `false` |
-| `app.nginx.image`           | Image to use for the nginx proxy | String | `nginx:stable` |
-| `app.nginx.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
+| Name                        | Description                           | Type       | Default Value  |
+|-----------------------------|---------------------------------------|------------|----------------|
+| `nginx.image`               | Image to use for the nginx proxy      | String     | `nginx:stable` |
+| `nginx.imagePullPolicy`     | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
+| `nginx.service.type`        | Sets the http service type            | String     | `ClusterIP`    |
+| `nginx.service.port`        | Port for the service                  | Integer    | `80`           |
+| `nginx.service.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
+
+## Powersync
+
+| Name                        | Description                           | Type       | Default Value  |
+|-----------------------------|---------------------------------------|------------|----------------|
+| `powersync.image.registry`    | Image registry                       | String     | `docker.io`    |
+| `powersync.image.repository`  | Image repostory                      | String     | `journeyapps/powersync-service` |
+| `powersync.image.tag`         | Image tag                            | String     | `latest`       |
+| `powersync.image.PullPolicy`  | Image pull policy                    | String     | `IfNotPresent` |
+| `powersync.annotations`       | Annotations to attach to the service | Dictionary | `{}`           |
+| `powersync.replicas`          | Number of webserver instances that should be running | Integer | `1` |
+| `powersync.replicasWorker`    | Number replica workers               | Integer    | `1`            |
+| `powersync.securityContext`   | Pod security context                 | Object     | see [values.yaml](charts/wger/values.yaml) |
+| `powersync.serviceApi.type`        | Sets the http service type            | String     | `ClusterIP`    |
+| `powersync.serviceApi.port`        | Port for the service                  | Integer    | `8080`         |
+| `powersync.serviceApi.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
+| `powersync.servicePrometheus.type`        | Sets the http service type            | String     | `ClusterIP`    |
+| `powersync.servicePrometheus.port`        | Port for the service                  | Integer    | `9090`         |
+| `powersync.servicePrometheus.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
+| `powersync.configPath`        | Path to the powersync config                      | String     | `/config/powersync.yaml` |
+| `powersync.jwksURL`           | URI for JWK auth                     | String     | `http://{{ .Release.Name }}-http:80/api/v2/powersync-keys` |
 
 
 ## Ingress
@@ -157,38 +192,22 @@ Celery requires persistent volumes.
 | `ingress.annotations`      | Annotations to attach to the ingress       | Dictionary | `{}`              |
 
 
-## Service
-
-| Name                  | Description                          | Type       | Default Value |
-|-----------------------|--------------------------------------|------------|---------------|
-| `service.type`        | Sets the http service type, valid values are `NodePort`, `ClusterIP` or `LoadBalancer`. | String | `ClusterIP` |
-| `service.port`        | Port for the service                 | Integer    | `8000` |
-| `service.annotations` | Annotations to attach to the service | Dictionary | `{}`   |
-
-
 ## Persistence
 
 | Name                                    | Description                                                        | Type | Default Value |
 |-----------------------------------------|--------------------------------------------------------------------|------|---------------|
-| `app.persistence.enabled`               | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
+| `app.persistence.existingClaim.enabled` | Whether to use a existing persistent storage claim. If `false`, the options from below are ignored | Boolean | `false` |
 | `app.persistence.existingClaim.media`   | Name of the pvc for the media data when existingClaim is enabled   | String     | `null` |
 | `app.persistence.existingClaim.static`  | Name of the pvc for the static data when existingClaim is enabled  | String     | `null` |
-| `app.persistence.existingClaim.enabled` | Whether to use a existing persistent storage claim. If `false`, the options from below are ignored | Boolean | `false` |
 | `app.persistence.storageClass`          | StorageClass for the PVCs                                          | String     | `""` |
 | `app.persistence.accessModes`           | Access modes for the PVCs                                          | Array      | `["ReadWriteMany"]` |
 | `app.persistence.size`                  | PVC size                                                           | String     | `8Gi` |
 | `app.persistence.annotations`           | Annotations to attach to the persistence objects (PVC and PV)      | Dictionary | `{}` |
-| `app.persistence.enabled`               | Whether to enable persistent storage. If `false`, the options from below are ignored | Boolean | `false` |
 
 
 ## Application Resources
 
-| Name                            | Description | Type | Default Value |
-|---------------------------------|-------------|------|---------------|
-| `app.resources.requests.memory` | Amount of memory that the app requests for running. Keep this value low to allow the pod to get admitted on a node. | String | `128Mi` |
-| `app.resources.requests.cpu`    | Amount of CPU that the app requests for running. Keep this value low to allow the pod to get admitted on a node. | String | `100m` |
-| `app.resources.limits.memory`   | Maximum amount of memory that the app is allowed to use. | String | `512Mi` |
-| `app.resources.limits.cpu`      | Maximum amount of CPU that the app is allowed to use.    | String | `500m`  |
+Most containers have their `resources` setting: see [values.yaml](values.yaml).
 
 
 ### Environment Variables
@@ -448,18 +467,6 @@ Generally:
 * if you have a problem, create an issue in [the issue tracker](https://github.com/wger-project/helm-charts/issues)
 * if you have a cool idea, create a fork and send pull requests
 * assure that your code is well-formed (hint: [`helm lint`](https://helm.sh/docs/helm/helm_lint/) is a useful command). This is enforced using continuous integration.
-
-
-## Running a highly available setup
-
-The deployment can be scaled using `app.global.replicas` to allow for more web server replicas. Persistence should be enabled as well to ensure that the different webservers have access to the same static and media shares.
-
-Generally persistent volumes needs to be configured depending on your setup.
-
-
-## Developing locally
-
-Please have a look at [DEVEL.md](/DEVEL.md).
 
 
 ## Contact
