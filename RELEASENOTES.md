@@ -11,6 +11,7 @@ https://github.com/wger-project/docker/commit/ec5893553d81445485e5d32f5a6be637a1
 * update the current jwt secret
 * add resource settings for most containers
 * separate service settings
+* minor upgrade postgres to 15.18
 
 ## 0.3.0
 
