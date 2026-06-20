@@ -17,7 +17,7 @@ app:
   persistence:
     storageClass: null
     accessModes:
-      - ReadWriteMany
+      - ReadWriteOnce
     sizeMedia: 8Gi
     sizeStatic: 8Gi
     sizeCeleryBeat: 1Gi
