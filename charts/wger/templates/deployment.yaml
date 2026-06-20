@@ -39,16 +39,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.django.secret.name | default "django" | quote }}
                   key: "secret-key"
-            - name: JWT_PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "private-key"
-            - name: JWT_PUBLIC_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
-                  key: "public-key"
             {{- if .Values.app.mail.enabled }}
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
