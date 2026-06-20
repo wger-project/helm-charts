@@ -95,6 +95,16 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.django.existingDatabase.existingSecret.dbuserKey` | Key containing the database user     | String | `null` |
 | `app.django.existingDatabase.existingSecret.dbpwKey`   | Key containing the database password | String | `null` |
 
+
+### Service for the wger app
+
+| Name                      | Description                          | Type       | Default Value |
+|---------------------------|--------------------------------------|------------|---------------|
+| `app.service.type`        | Sets the http service type           | String     | `ClusterIP`   |
+| `app.service.port`        | Port for the service                 | Integer    | `80`          |
+| `app.service.annotations` | Annotations to attach to the service | Dictionary | `{}`          |
+
+
 ### Celery
 
 Celery requires persistent volumes.
@@ -110,7 +120,10 @@ Celery requires persistent volumes.
 | `celery.syncImages`             | sync exercise images          | Boolean    | `True`            |
 | `celery.syncVideos`             | sync exercise videos          | Boolean    | `True`            |
 | `celery.ingredientsFrom`        | source for ingredients, possible values `WGER`,`OFF` | String  | `WGER`  |
-| `celery.flower.enabled`         | enable flower webinterface for celery                | Boolean | `False` |
+| `celery.service.type`           | Sets the http service type    | String     | `ClusterIP`       |
+| `celery.service.port`           | Port for the service          | Integer    | `80`              |
+| `celery.service.annotations` | Annotations to attach to the service  | Dictionary | `{}`      |
+| `celery.flower.enabled`         | enable flower webinterface for celery | Boolean    | `False`   |
 | `celery.flower.secret.name`     | Name of the secret            | String     | `flower`          |
 | `celery.flower.secret.password` | Password for the webinterface | String     | `randAlphaNum 50` |
 
@@ -120,7 +133,7 @@ Celery requires persistent volumes.
 | Name                           | Description                              | Type    | Default Value     |
 |--------------------------------|------------------------------------------|---------|-------------------|
 | `app.jwt.secret.name`          | Name of the secret                       | String  | `jwt`             |
-| `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `true`            |
+| `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `false`           |
 | `app.jwt.secret.privateKey`    | Private Key for JWT                      | String  | a default key     |
 | `app.jwt.secret.publicKey`     | Public Key for JWT                       | String  | a default key     |
 | `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`              |
@@ -147,6 +160,10 @@ Celery requires persistent volumes.
 | `nginx.imagePullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
 
 
+## Powersync
+
+
+
 ## Ingress
 
 | Name                       | Description                                | Type       | Default Value     |
@@ -156,15 +173,6 @@ Celery requires persistent volumes.
 | `ingress.url`              | The URL that this ingress should use       | String     | `fit.example.com` |
 | `ingress.tls`              | Whether to enable TLS. If using cert-manager, the correct annotations have to be set | Boolean | `true` |
 | `ingress.annotations`      | Annotations to attach to the ingress       | Dictionary | `{}`              |
-
-
-## Service
-
-| Name                  | Description                          | Type       | Default Value |
-|-----------------------|--------------------------------------|------------|---------------|
-| `service.type`        | Sets the http service type, valid values are `NodePort`, `ClusterIP` or `LoadBalancer`. | String | `ClusterIP` |
-| `service.port`        | Port for the service                 | Integer    | `8000` |
-| `service.annotations` | Annotations to attach to the service | Dictionary | `{}`   |
 
 
 ## Persistence

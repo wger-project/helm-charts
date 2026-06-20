@@ -31,5 +31,5 @@ spec:
             service:
               name: {{ .Release.Name }}-http
               port:
-                number: {{ .Values.service.port }}
+                number: {{ .Values.nginx.service.port }}
 {{- end }}
