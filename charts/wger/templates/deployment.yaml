@@ -33,6 +33,7 @@ spec:
           env:
             {{- include "wger.env" . | indent 12 }}
             {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -166,10 +167,10 @@ spec:
             - name: nginx-conf
               mountPath: /etc/nginx/conf.d/
             - name: wger-media
-              mountPath: /var/www/html/media
+              mountPath: /wger/media
               readOnly: true
             - name: wger-static
-              mountPath: /var/www/html/static
+              mountPath: /wger/static
               readOnly: true
           {{- if .Values.nginx.resources }}
           resources:
@@ -220,6 +221,7 @@ spec:
           image: "{{ .Values.powersync.image.registry }}/{{ .Values.powersync.image.repository }}:{{ .Values.powersync.image.tag }}"
           imagePullPolicy: {{ .Values.powersync.image.PullPolicy }}
           env:
+            {{- include "database.settings" . | indent 10 }}
             {{- include "powersync.settings" . | indent 10 }}
           #
           # In Kubernetes commands overrides the entrypoint and args adds additional arguments to the entrypoint (command)
@@ -303,6 +305,7 @@ spec:
           env:
             {{- include "wger.env" . | indent 12 }}
             {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -362,6 +365,7 @@ spec:
           env:
             {{- include "wger.env" . | indent 12 }}
             {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -464,6 +468,7 @@ spec:
           env:
             {{- include "wger.env" . | indent 12 }}
             {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:

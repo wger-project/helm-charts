@@ -207,9 +207,6 @@ environment:
         name: {{.Release.Name}}-postgres
         key: "POSTGRES_DB"
   {{- end }}
-  # powersync database
-  - name: PS_DATABASE_URI
-    value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
 {{- end }}
 
 {{/*
@@ -257,31 +254,12 @@ environment:
     value: "8080"
   - name: POWERSYNC_URL_PATH
     value: "ps"
-  # database settings
-  - name: DJANGO_DB_HOST
-    value: {{ .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
-  - name: DJANGO_DB_PORT
-    value: {{ .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
-  {{- if .Values.app.django.existingDatabase.enabled }}
-    {{- if .Values.app.django.existingDatabase.existingSecret.dbnameKey }}
-  - name: DJANGO_DB_DATABASE
-    valueFrom:
-      secretKeyRef:
-        name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
-        key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
-    {{- else }}
-  - name: DJANGO_DB_DATABASE
-    value: {{ .Values.app.django.existingDatabase.dbname | default "wger" | quote }}
-    {{- end }}
-  {{- else }}
-  - name: DJANGO_DB_DATABASE
-    valueFrom:
-      secretKeyRef:
-        name: {{.Release.Name}}-postgres
-        key: "POSTGRES_DB"
-  {{- end }}
+  # ps database settings
   - name: PS_STORAGE_PG_URI
-    value: "postgres://powersync_storage:powersync_password@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
+    #value: "postgres://powersync_storage:powersync_password@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
+    value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
+  - name: PS_DATABASE_URI
+    value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
 {{- end }}
 
 {{/*
@@ -308,5 +286,5 @@ environment:
 - -c
 - until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done &&
   until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
-  until wget --spider http://{{ .Release.Name }}-http:8000; do echo "Waiting for wger app service ({{ .Release.Name }}-http:8000)"; sleep 2; done
+  until wget --spider http://{{ .Release.Name }}-http:80; do echo "Waiting for nginx service ({{ .Release.Name }}-http:80)"; sleep 2; done
 {{- end }}
