@@ -25,7 +25,7 @@ kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-postgres -o j
 The jwt keys have been changed you need to restart the deployment to activate the new keys:
 
 ```
-kubectl -n {{ .Release.Namespace }} rollout restart deploy {{ .Release.Name }}-app {{ .Release.Name }}-powersync {{ .Release.Name }}-celery {{ .Release.Name }}-celery-worker
+kubectl -n {{ .Release.Namespace }} rollout restart deploy {{ .Release.Name }}-app {{ .Release.Name }}-powersync {{ .Release.Name }}-nginx {{ .Release.Name }}-celery {{ .Release.Name }}-celery-worker
 ```
 
 {{- end }}
