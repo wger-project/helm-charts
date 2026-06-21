@@ -33,7 +33,7 @@ spec:
               jose jwk gen -i '{"alg":"RS256", "kid":"wger"}' -o /tmp/jwt.key
               jose jwk pub -i /tmp/jwt.key > /tmp/jwt.pub
               
-              # python for json dump string conversion and urlsave base64 conversion (padding)
+              # python for json dump string conversion and urlsafe base64 conversion (padding)
               PRIVATEKEY=$(python -c "import json; from base64 import urlsafe_b64encode; print(urlsafe_b64encode(json.dumps($(cat /tmp/jwt.key)).encode()).decode())")
               PUBLICKEY=$(python -c "import json; from base64 import urlsafe_b64encode; print(urlsafe_b64encode(json.dumps($(cat /tmp/jwt.pub)).encode()).decode())")
 
