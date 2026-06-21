@@ -288,3 +288,32 @@ environment:
   until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
   until wget --spider http://{{ .Release.Name }}-http:80; do echo "Waiting for nginx service ({{ .Release.Name }}-http:80)"; sleep 2; done
 {{- end }}
+
+{{/*
+ "manipulateXX" definitions
+ used for secret creation or update
+*/}}
+# jwt secret
+{{- define "manipulatejwt" -}}
+{{- if (lookup "v1" "Secret" .Release.Namespace .Values.app.jwt.secret.name) -}}
+  {{- if .Values.app.jwt.secret.update -}}
+doit
+  {{- end -}}
+{{- else -}}
+doit
+{{- end -}}
+{{- end -}}
+# mail secret
+{{- define "manipulatemail" -}}
+{{- if (lookup "v1" "Secret" .Release.Namespace .Values.app.mail.secret.name) -}}
+  {{- if .Values.app.mail.secret.update -}}
+    {{- if .Values.app.mail.secret.password -}}
+doit
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- if .Values.app.mail.secret.password -}}
+doit
+  {{- end -}}
+{{- end -}}
+{{- end -}}
