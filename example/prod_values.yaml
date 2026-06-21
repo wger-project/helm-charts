@@ -1,4 +1,3 @@
----
 #
 # The following example uses:
 #
@@ -23,16 +22,6 @@ app:
     from_email: "wger@example.com"
     secret:
       password: XXXXXXXXXXXXXXXXXXXXXXX
-  # JWT auth
-  jwt:
-    secret:
-      update: true
-      # JWT keys, used by the mobile app. This default NEEDS to be changed.
-      # Generate fresh keys with: docker compose exec web ./manage.py generate-jwt-keys
-      # @todo autogenerate a new key and save it into the secret when installing
-      # currently there is a hardcoded default key so that the installation works
-      privateKey: "my_private_key"
-      publicKey: "my_public_key"
 
   axes:
     enabled: true
@@ -49,9 +38,6 @@ app:
       media: wger-media
       static: wger-static
       celeryBeat: wger-celery-beat
-  environment:
-    - name: GUNICORN_CMD_ARGS
-      value: "--timeout 240 --workers 2 --worker-class gthread --threads 3 --forwarded-allow-ips * --proxy-protocol True --access-logformat='%(h)s %(l)s %({client-ip}i)s %(l)s %({x-real-ip}i)s %(l)s %({x-forwarded-for}i)s %(l)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"' --access-logfile - --error-logfile -"
 
 celery:
     enabled: true
