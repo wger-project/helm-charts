@@ -255,9 +255,18 @@ environment:
   - name: POWERSYNC_URL_PATH
     value: "ps"
   # ps database settings
+  - name: PS_DB_USER
+    valueFrom:
+      secretKeyRef:
+        name:  "powersync"
+        key: "user"
+  - name: PS_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name:  "powersync"
+        key: "pw"
   - name: PS_STORAGE_PG_URI
-    #value: "postgres://powersync_storage:powersync_password@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
-    value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
+    value: "postgres://$(PS_DB_USER):$(PS_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
   - name: PS_DATABASE_URI
     value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
 {{- end }}
