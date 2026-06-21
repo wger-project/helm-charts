@@ -76,14 +76,17 @@ app:
   # JWT auth
   jwt:
     secret:
-      update: false
       name: "jwt"
       # JWT keys, used by the mobile app.
-      # Generate fresh keys with: docker compose exec web ./manage.py generate-jwt-keys
-      # This chart uses openssl in a pre-install job to autogenerate the jwt keys
+      # You can generate fresh keys with: docker compose exec web ./manage.py generate-jwt-keys
+      #
+      # This chart uses openssl in a pre-install hook to autogenerate new jwt keys
       # and creates the secret
       #
       # You can set your keys here and set `update: true` then it will use these keys
+      # If you set `update: true` but don't set any private or public key
+      # it will autogenerate new ones and replaces them in the secret
+      update: false
       privateKey: null
       publicKey: null
     # The lifetime duration of the access token, in minutes
