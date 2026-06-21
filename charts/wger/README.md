@@ -22,22 +22,21 @@ For a more productive environment you have to enable nginx as a reverse proxy. T
 
 ## Installing the chart
 
-You can install the chart by adding our helm repository and then installing it normally via helm upgrade.
+You can install the chart by adding our helm repository.
 
 ```bash
 helm repo add github-wger https://wger-project.github.io/helm-charts
 
-helm upgrade \
-  --install wger github-wger/wger \
-  --version 0.3.0 \
+helm install wger github-wger/wger \
+  --version 1.0.0 \
   -n wger \
   --create-namespace
   -f values.yaml
 ```
 
-First you may want to make a copy of [values.yaml](values.yaml) and modify it for your needs.
+But first you need to make a copy of [values.yaml](values.yaml) and modify it for your needs.
 
-There are some examples of the `values.yaml` in the [example folder](/example/).
+There is a example of the `values.yaml` in the [example folder](/example/) with the most basic settings.
 
 Please see the [parameters section](#parameters).
 
