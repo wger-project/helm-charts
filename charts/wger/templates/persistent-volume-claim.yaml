@@ -1,6 +1,5 @@
 # yamllint disable rule:document-start
 {{- if not .Values.app.persistence.existingClaim.enabled }}
----
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
