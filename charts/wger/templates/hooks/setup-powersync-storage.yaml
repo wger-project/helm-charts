@@ -1,7 +1,9 @@
+{{- $dbhost := .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
+{{- $dbport := .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
 # post-install hook: initialize the powersync storage schema/user in the DB by
 # running `./manage.py setup-powersync-storage` inside the running wger pod.
 # Authenticates with the dedicated {{ .Release.Name }}-powersync-initdb SA,
-# which is granted get/list/watch on pods and create on pods/exec (role.yaml).
+# which is granted get/list on pods and create on pods/exec (role.yaml).
 apiVersion: batch/v1
 kind: Job
 metadata:
