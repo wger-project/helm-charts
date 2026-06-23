@@ -16,7 +16,7 @@ spec:
   template:
     spec:
       restartPolicy: Never
-      serviceAccountName: {{ .Release.Name }}
+      serviceAccountName: {{ .Release.Name }}-keygen
       containers:
         - name: keygen
           image: alpine:latest
