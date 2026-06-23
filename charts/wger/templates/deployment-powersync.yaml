@@ -21,6 +21,10 @@ spec:
       {{- end }}
     {{- end }}
     spec:
+      # for using a different service account for the init container -> to init the db
+      # prevent the pod’s default SA token from being auto‑mounted.
+      automountServiceAccountToken: false
+      serviceAccountName: default
       {{- with .Values.powersync.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -62,6 +66,10 @@ spec:
           volumeMounts:
             - name: powersync-conf
               mountPath: /config
+            # the default service account token as we disabled the automount for this pod
+            - name: default-sa-token
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
           {{- if .Values.powersync.resources }}
           resources:
             {{- with .Values.powersync.resources }}
@@ -69,12 +77,47 @@ spec:
             {{- end }}
           {{- end }}
       initContainers:
-      # @todo init container calls wger to setup database and user?
+        # init container connects to the wger pod to setup the database and user
         - name: init-container
-          image: docker.io/busybox:latest
+          image: docker.io/alpine:latest
+          # mount the token from the service account for the init container
+          volumeMounts:
+            - name: init-sa-token
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
           command:
-          {{- include "initContainer.web.command" . | indent 10 }}
+          {{- include "initContainer.psinitdb.command" . | indent 10 }}
       volumes:
         - name: powersync-conf
           configMap:
             name: {{ .Release.Name }}-powersync-configmap
+        # projected token volumes – one for each service account
+        # Token & CA for the init SA
+        - name: init-sa-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: api
+                  expirationSeconds: 3600
+                  # The service account used for the init container.
+                  serviceAccountName: {{ .Release.Name }}-powersync-initdb
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                  - key: ca.crt
+                    path: ca.crt
+        - name: default-sa-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: api
+                  expirationSeconds: 3600
+                  # The default service account (empty string means “default”).
+                  serviceAccountName: ""
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                  - key: ca.crt
+                    path: ca.crt

@@ -299,6 +299,31 @@ environment:
 {{- end }}
 
 {{/*
+ initContainer powersync initdb command
+ used for powersync containers
+*/}}
+{{- define "initContainer.psinitdb.command" }}
+{{- $dbhost := .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
+{{- $dbport := .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
+- /bin/sh
+- -c
+- |
+  # Wait on install for services to be available
+  until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done
+  until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done
+  until wget --spider http://{{ .Release.Name }}-http:80; do echo "Waiting for nginx service ({{ .Release.Name }}-http:80)"; sleep 2; done
+
+  # Connect to the wger container and init the ps database
+  
+  # Add required packages
+  apk add kubectl
+  
+  # Execute the powersync db setup
+  export POD=$(kubectl -n {{ .Release.Namespace }} get pods -l "app.kubernetes.io/name={{ .Release.Name }}-app" -o jsonpath="{.items[0].metadata.name}")
+  kubectl -n {{ .Release.Namespace }} exec -it pod/$POD -c wger -- ./manage.py setup-powersync-storage
+{{- end }}
+
+{{/*
  "manipulateXX" definitions
  used for secret creation or update
 */}}
