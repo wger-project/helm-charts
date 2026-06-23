@@ -21,4 +21,8 @@ metadata:
 rules:
 - apiGroups: [""]
   resources: ["pods"]
-  verbs: ["get", "list", "exec"]
+  verbs: ["get", "list"]
+# exec is a subresource: it requires `create` on pods/exec, not an `exec` verb on pods
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]

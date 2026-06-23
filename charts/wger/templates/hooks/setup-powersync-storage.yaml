@@ -1,0 +1,56 @@
+# post-install hook: initialize the powersync storage schema/user in the DB by
+# running `./manage.py setup-powersync-storage` inside the running wger pod.
+# Authenticates with the dedicated {{ .Release.Name }}-powersync-initdb SA,
+# which is granted get/list/watch on pods and create on pods/exec (role.yaml).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-setup-powersync-storage
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-setup-powersync-storage
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Release.Name }}-powersync-initdb
+      containers:
+        - name: setup-powersync-storage
+          image: docker.io/alpine:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              # kubectl to talk to the API and exec into the wger pod
+              apk add --no-cache kubectl
+
+              # Wait for a wger app service to become Ready (post-install hooks do not
+              # block on the app Deployment being available).
+              until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do
+                echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) ";
+                sleep 2;
+              done
+              until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do
+                echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})";
+                sleep 2;
+              done
+              until wget --spider http://{{ .Release.Name }}-http:80; do
+                echo "Waiting for nginx service ({{ .Release.Name }}-http:80)";
+                sleep 2;
+              done
+
+              # Resolve the pod name and run the management command in the wger container.
+              POD=$(kubectl -n {{ .Release.Namespace }} get pods \
+                -l "app.kubernetes.io/name={{ .Release.Name }}-app" \
+                -o jsonpath="{.items[0].metadata.name}")
+              echo "Running setup-powersync-storage in pod/$POD ..."
+              kubectl -n {{ .Release.Namespace }} exec "$POD" -c wger -- ./manage.py setup-powersync-storage
