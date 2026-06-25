@@ -7,8 +7,10 @@ This is a major upgrade and has breaking changes. Please review the
 
 file and update your own.
 
+First make a backup of your database and media files.
+
 If you update a existing installation you need to set the following,
-as the key already exists from the previous installation:
+as the key already exists from the previous installation, alternativly you can delete the secret:
 
 ```yaml
 app:
@@ -23,8 +25,7 @@ The now unused signing key remains in the secret, but serves no purpose.
 This chart also takes care of the JWT and powersync setup no manual task is required there.
 
 The first start and even restarting the wger container takes a long time as we now use a
-post-install hook the helm command will timeout, don't worry the deployment still works but use
-`--timeout 15m` 
+post-install hook the helm command can timeout, use `--timeout 15m`.
 
 * upgrade to wger 2.6
 * minor upgrade postgres to 15.18
