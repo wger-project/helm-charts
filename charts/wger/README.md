@@ -22,12 +22,13 @@ For a more productive environment you have to enable nginx as a reverse proxy. T
 
 ## Installing the chart
 
-You can install the chart by adding our helm repository.
+You can install the chart by adding our helm repository. Starting the wger container takes a long time for the first time it even takes longer, so add `--timeout 15m` to the helm command.
 
 ```bash
 helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm install wger github-wger/wger \
+  --timeout 15m \
   --version 1.0.0 \
   -n wger \
   --create-namespace
@@ -332,6 +333,7 @@ helm search repo github-wger/wger -l --devel
 helm -n wger list
 
 helm upgrade \
+  --timeout 15m \
   --install wger github-wger/wger \
   --version 0.3.0 \
   -n wger \
@@ -363,7 +365,7 @@ If you however missed that, you need to know which postgres version you where ru
 
 ```bash
 # stop the current wger deployment
-kubectl -n wger scale --replicas=0 deploy wger-app
+kubectl -n wger scale --replicas=0 deploy wger-app wger-powersync wger-nginx wger-celery wger-celery-worker
 # stop the postgres sts
 kubectl -n wger scale --replicas=0 sts wger-postgres
 ```
@@ -422,6 +424,7 @@ app:
 
 ```bash
 helm upgrade \
+  --timeout 15m \
   --install wger github-wger/wger \
   --version 0.3.0 \
   -n wger \
@@ -438,13 +441,13 @@ cat /var/lib/postgresql/data/dump.sql | psql --username wger --dbname wger
 Also reset the database password to the one you used, the default is `wger`:
 
 ```bash
-psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger'"
+psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger';"
 ```
 
 Start the wger app, don't forget to set back the replicas in your `values.yaml` as well:
 
 ```bash
-kubectl -n wger scale --replicas=1 deploy wger-app
+kubectl -n wger scale --replicas=1 deploy wger-app wger-powersync wger-nginx wger-celery wger-celery-worker
 ```
 
 
