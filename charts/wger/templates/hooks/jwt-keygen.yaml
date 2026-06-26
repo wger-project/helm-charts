@@ -1,0 +1,56 @@
+# updates or creates the jwt secret
+# manipulatejwt defined in _helpers.tpl
+{{- $manipulatejwt := (include "manipulatejwt" .) }}
+{{- if eq $manipulatejwt "doit" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-keygen
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade,pre-rollback
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Release.Name }}-keygen
+      containers:
+        - name: keygen
+          image: alpine:latest
+          command:
+            - sh
+            - -c
+            - |
+              # Add required packages
+              apk add jose python3 kubectl
+              
+              # Create jwk keys
+              # https://github.com/wger-project/wger/blob/master/wger/core/management/commands/generate-jwt-keys.py
+              # https://datatracker.ietf.org/doc/html/rfc7519
+              jose jwk gen -i '{"alg":"RS256", "kid":"wger"}' -o /tmp/jwt.key
+              jose jwk pub -i /tmp/jwt.key > /tmp/jwt.pub
+              
+              # python for json dump string conversion and urlsafe base64 conversion (padding)
+              PRIVATEKEY=$(python -c "import json; from base64 import urlsafe_b64encode; print(urlsafe_b64encode(json.dumps($(cat /tmp/jwt.key)).encode()).decode())")
+              PUBLICKEY=$(python -c "import json; from base64 import urlsafe_b64encode; print(urlsafe_b64encode(json.dumps($(cat /tmp/jwt.pub)).encode()).decode())")
+
+              # Create temp yaml
+              yaml_tmp='
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: {{ .Values.app.jwt.secret.name | default "jwt" }}
+                namespace: {{ .Release.Namespace }}
+              stringData:
+                private-key: {{ .Values.app.jwt.secret.privateKey | default "NEW_PRIVATEKEY" | quote }}
+                public-key: {{ .Values.app.jwt.secret.publicKey | default "NEW_PUBLICKEY" | quote }}
+              '
+
+              # Add keys to the yaml
+              yaml=$(echo "$yaml_tmp" | sed 's/"NEW_PRIVATEKEY"/'$PRIVATEKEY'/g' | sed 's/"NEW_PUBLICKEY"/'$PUBLICKEY'/g')
+              # Update or create the secret, this requires a serviceaccount with permissions
+              echo "$yaml" | kubectl apply -f -
+{{- end }}

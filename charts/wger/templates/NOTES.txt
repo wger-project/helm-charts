@@ -18,20 +18,23 @@ Get the postgres user passwords:
 ```
 kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-postgres -o jsonpath='{.data.USERDB_PASSWORD}' | base64 -d
 ```
-{{- end }}
 
-After the first installation you need to generate your own JWT keypair, this is used from the wger companion app
+After the first installation you need to generate the database setting for powersync, this is used from the wger companion app
 to authenticate for offline synchronisation:
 
 ```
 export POD=$(kubectl -n {{ .Release.Namespace }} get pods -l "app.kubernetes.io/name={{ .Release.Name }}-app" -o jsonpath="{.items[0].metadata.name}")
-kubectl -n {{ .Release.Namespace }} exec -it pod/$POD -c wger -- ./manage.py generate-jwt-keys
+kubectl -n {{ .Release.Namespace }} exec -it pod/$POD -c wger -- ./manage.py setup-powersync-storage
 ```
 
-The pair needs to be saved in the `jwt` secret, you can add it in your `values.yaml`, but you need to set
+{{- end }}
+
+{{- $manipulatejwt := (include "manipulatejwt" .) }}
+{{- if eq $manipulatejwt "doit" }}
+The jwt keys have been changed you need to restart the deployment to activate the new keys:
 
 ```
-  .Values.app.jwt.secret.update: true
+kubectl -n {{ .Release.Namespace }} rollout restart deploy {{ .Release.Name }}-app {{ .Release.Name }}-powersync {{ .Release.Name }}-nginx {{ .Release.Name }}-celery {{ .Release.Name }}-celery-worker
 ```
 
-for it to update the existing secret with the default value inside.
+{{- end }}

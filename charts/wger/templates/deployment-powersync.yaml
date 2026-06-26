@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-powersync
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.powersync.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-powersync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-powersync
+      annotations:
+    {{- with .Values.powersync.annotations }}
+      {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote}}
+      {{- end }}
+    {{- end }}
+    spec:
+      {{- with .Values.powersync.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: powersync
+          image: "{{ .Values.powersync.image.registry }}/{{ .Values.powersync.image.repository }}:{{ .Values.powersync.image.tag }}"
+          imagePullPolicy: {{ .Values.powersync.image.PullPolicy }}
+          env:
+            {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
+          #
+          # In Kubernetes commands overrides the entrypoint and args adds additional arguments to the entrypoint (command)
+          # so in this comment "command" is ment do be "args"
+          #
+          # The unified service runs an API server and replication worker in the same container.
+          # These services can be executed in different containers by using individual entry commands e.g.
+          # Start only the API server with
+          #   command: ['start', '-r', 'api']
+          # Start only the replication worker with
+          #   command: ['start', '-r', 'sync']
+
+          # Migrations occur automatically by default. Default migrations can be disabled in `powersync.yaml`:
+          #  migrations:
+          #   disable_auto_migration: true
+          #
+          # Service migrations can be manually triggered by starting a container with the
+          # following command:
+          #     command: ['migrate', 'up']
+          # Note that this container must finish executing before starting the sync or unified container.
+          args: ["start", "-r", "unified"]
+          ports:
+            - name: api
+              containerPort: 8080
+              protocol: TCP
+            - name: prometheus
+              containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - name: powersync-conf
+              mountPath: /config
+          {{- if .Values.powersync.resources }}
+          resources:
+            {{- with .Values.powersync.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+      initContainers:
+        - name: init-container
+          image: docker.io/alpine:latest
+          command:
+          {{- include "initContainer.web.command" . | indent 10 }}
+      volumes:
+        - name: powersync-conf
+          configMap:
+            name: {{ .Release.Name }}-powersync-configmap

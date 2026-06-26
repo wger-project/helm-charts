@@ -1,0 +1,7 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: wger-pg-init
+data:
+  40-grantSuperuser.sql: |
+    ALTER USER {{ .Values.postgres.userDatabase.user.value }} WITH SUPERUSER;

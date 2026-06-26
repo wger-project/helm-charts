@@ -22,22 +22,22 @@ For a more productive environment you have to enable nginx as a reverse proxy. T
 
 ## Installing the chart
 
-You can install the chart by adding our helm repository and then installing it normally via helm upgrade.
+You can install the chart by adding our helm repository. Starting the wger container takes a long time for the first time it even takes longer, so add `--timeout 15m` to the helm command.
 
 ```bash
 helm repo add github-wger https://wger-project.github.io/helm-charts
 
-helm upgrade \
-  --install wger github-wger/wger \
-  --version 0.3.0 \
+helm install wger github-wger/wger \
+  --timeout 15m \
+  --version 1.0.0 \
   -n wger \
   --create-namespace
   -f values.yaml
 ```
 
-First you may want to make a copy of [values.yaml](values.yaml) and modify it for your needs.
+But first you need to make a copy of [values.yaml](values.yaml) and modify it for your needs.
 
-There are some examples of the `values.yaml` in the [example folder](/example/).
+There is a example of the `values.yaml` in the [example folder](/example/) with the most basic settings.
 
 Please see the [parameters section](#parameters).
 
@@ -131,8 +131,8 @@ Celery requires persistent volumes.
 |--------------------------------|------------------------------------------|---------|-------------------|
 | `app.jwt.secret.name`          | Name of the secret                       | String  | `jwt`             |
 | `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `false`           |
-| `app.jwt.secret.privateKey`    | Private Key for JWT                      | String  | a default key     |
-| `app.jwt.secret.publicKey`     | Public Key for JWT                       | String  | a default key     |
+| `app.jwt.secret.privateKey`    | Private Key for JWT                      | String  | auto created new key |
+| `app.jwt.secret.publicKey`     | Public Key for JWT                       | String  | auto created new key |
 | `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`              |
 | `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String  | `24`              |
 
@@ -333,6 +333,7 @@ helm search repo github-wger/wger -l --devel
 helm -n wger list
 
 helm upgrade \
+  --timeout 15m \
   --install wger github-wger/wger \
   --version 0.3.0 \
   -n wger \
@@ -364,7 +365,7 @@ If you however missed that, you need to know which postgres version you where ru
 
 ```bash
 # stop the current wger deployment
-kubectl -n wger scale --replicas=0 deploy wger-app
+kubectl -n wger scale --replicas=0 deploy wger-app wger-powersync wger-nginx wger-celery wger-celery-worker
 # stop the postgres sts
 kubectl -n wger scale --replicas=0 sts wger-postgres
 ```
@@ -423,6 +424,7 @@ app:
 
 ```bash
 helm upgrade \
+  --timeout 15m \
   --install wger github-wger/wger \
   --version 0.3.0 \
   -n wger \
@@ -439,13 +441,13 @@ cat /var/lib/postgresql/data/dump.sql | psql --username wger --dbname wger
 Also reset the database password to the one you used, the default is `wger`:
 
 ```bash
-psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger'"
+psql --username wger --dbname wger -c "ALTER USER wger WITH PASSWORD 'wger';"
 ```
 
 Start the wger app, don't forget to set back the replicas in your `values.yaml` as well:
 
 ```bash
-kubectl -n wger scale --replicas=1 deploy wger-app
+kubectl -n wger scale --replicas=1 deploy wger-app wger-powersync wger-nginx wger-celery wger-celery-worker
 ```
 
 

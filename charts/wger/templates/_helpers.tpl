@@ -255,9 +255,18 @@ environment:
   - name: POWERSYNC_URL_PATH
     value: "ps"
   # ps database settings
+  - name: PS_DB_USER
+    valueFrom:
+      secretKeyRef:
+        name:  "powersync"
+        key: "user"
+  - name: PS_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name:  "powersync"
+        key: "pw"
   - name: PS_STORAGE_PG_URI
-    #value: "postgres://powersync_storage:powersync_password@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
-    value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
+    value: "postgres://$(PS_DB_USER):$(PS_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
   - name: PS_DATABASE_URI
     value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
 {{- end }}
@@ -288,3 +297,32 @@ environment:
   until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
   until wget --spider http://{{ .Release.Name }}-http:80; do echo "Waiting for nginx service ({{ .Release.Name }}-http:80)"; sleep 2; done
 {{- end }}
+
+{{/*
+ "manipulateXX" definitions
+ used for secret creation or update
+*/}}
+# jwt secret
+{{- define "manipulatejwt" -}}
+{{- if (lookup "v1" "Secret" .Release.Namespace .Values.app.jwt.secret.name) -}}
+  {{- if .Values.app.jwt.secret.update -}}
+doit
+  {{- end -}}
+{{- else -}}
+doit
+{{- end -}}
+{{- end -}}
+# mail secret
+{{- define "manipulatemail" -}}
+{{- if (lookup "v1" "Secret" .Release.Namespace .Values.app.mail.secret.name) -}}
+  {{- if .Values.app.mail.secret.update -}}
+    {{- if .Values.app.mail.secret.password -}}
+doit
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- if .Values.app.mail.secret.password -}}
+doit
+  {{- end -}}
+{{- end -}}
+{{- end -}}
