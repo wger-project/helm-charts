@@ -28,8 +28,6 @@ app:
     failureLimit: 10
     # in minutes
     cooloffTime: 30
-    # number of reverse proxies involved
-    ipwareProxyCount: 1
     # order of magnitude from last proxy for the real ip
     ipwareMetaPrecedenceOrder: "X_FORWARDED_FOR,REMOTE_ADDR"
   persistence:
@@ -38,9 +36,6 @@ app:
       media: wger-media
       static: wger-static
       celeryBeat: wger-celery-beat
-
-celery:
-    enabled: true
 
 ingress:
   enabled: true

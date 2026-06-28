@@ -7,6 +7,9 @@ metadata:
     app.kubernetes.io/name: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.powersync.replicas }}
+  strategy:
+    # kills all old Pods first
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}-powersync
@@ -15,6 +18,8 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-powersync
       annotations:
+        # restart on upgrade
+        rollme: {{ randAlphaNum 5 | quote }}
     {{- with .Values.powersync.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
@@ -71,8 +76,9 @@ spec:
       initContainers:
         - name: init-container
           image: docker.io/alpine:latest
+          imagePullPolicy: {{ .Values.powersync.image.PullPolicy }}
           command:
-          {{- include "initContainer.web.command" . | indent 10 }}
+          {{- include "initContainer.app.command" . | indent 10 }}
       volumes:
         - name: powersync-conf
           configMap:

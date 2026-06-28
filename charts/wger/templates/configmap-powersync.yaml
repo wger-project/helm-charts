@@ -76,6 +76,14 @@ data:
       # JWKS audience
       audience: ["powersync"]
 
+    # System-level configuration options
+    system:
+      # Service logging configuration
+      logging:
+        # Log level for the service logs
+        level: info #  'silly', 'debug', 'verbose', 'http', 'info', 'warn', 'error'
+        format: text # 'json' or 'text'
+
   sync_rules.yaml: |
     # Note that changes to this file are not watched.
     # The service needs to be restarted for changes to take effect.

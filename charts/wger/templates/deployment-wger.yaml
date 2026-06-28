@@ -7,6 +7,9 @@ metadata:
     app.kubernetes.io/name: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.app.global.replicas }}
+  strategy:
+    # kills all old Pods first
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}-app
@@ -15,12 +18,19 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-app
       annotations:
+        # restart on upgrade
+        rollme: {{ randAlphaNum 5 | quote }}
     {{- with .Values.app.global.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
       {{- end }}
     {{- end }}
     spec:
+      # explicit set the default of 30s grace period
+      # for the container to be SIGKILL'ed, pevents
+      # powersync to start before old containers
+      # are removed 
+      terminationGracePeriodSeconds: 30
       {{- with .Values.app.global.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -78,6 +88,14 @@ spec:
             - name: app
               containerPort: 8000
               protocol: TCP
+          # only accept network connection when ready
+          # eg. when database migrations and collectstatic
+          # have finished
+          readinessProbe:
+            httpGet:
+              path: /
+              port: app
+            periodSeconds: 5
           {{- if .Values.app.resources }}
           resources:
             {{- with .Values.app.resources }}
@@ -99,6 +117,7 @@ spec:
       initContainers:
         - name: init-container
           image: docker.io/busybox:latest
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           command:
           {{- include "initContainer.pgonly.command" . | indent 10 }}
       volumes:

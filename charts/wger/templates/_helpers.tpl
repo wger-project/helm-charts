@@ -44,7 +44,7 @@ environment:
   - name: DJANGO_CACHE_TIMEOUT
     value: {{ int .Values.app.django.cache.timeout | default "1296000" | quote }}
   - name: EXERCISE_CACHE_TTL
-    value: "18000"
+    value: "2419200"
   # django general
   {{- if .Values.ingress.enabled }}
   - name: SITE_URL
@@ -63,6 +63,12 @@ environment:
     value: "False"
   - name: DJANGO_MEDIA_ROOT
     value: "/home/wger/media"
+  # Django Rest Framework
+  # The number of proxies in front of the application. In the default configuration
+  # only nginx is. Change as approtriate if your setup differs. Also note that this
+  # is only used when throttling API requests.
+  - name: NUMBER_OF_PROXIES
+    value: {{ int .Values.app.global.proxyCount | default "1" | quote }}
   # axes
   - name: AXES_ENABLED
   {{- if .Values.app.axes.enabled }}
@@ -77,7 +83,7 @@ environment:
   - name: AXES_COOLOFF_TIME
     value: {{ int .Values.app.axes.cooloffTime | default "30" | quote }}
   - name: AXES_IPWARE_PROXY_COUNT
-    value: {{ int .Values.app.axes.ipwareProxyCount | default "0" | quote }}
+    value: {{ int .Values.app.global.proxyCount | default "1" | quote }}
     # @todo bad default, use the default from axes REMOTE_ADDR only
   - name: AXES_IPWARE_META_PRECEDENCE_ORDER
     value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "HTTP_X_FORWARDED_FOR,REMOTE_ADDR" | quote }}
@@ -87,7 +93,7 @@ environment:
   - name: ACCESS_TOKEN_LIFETIME
     value: {{ int .Values.app.jwt.accessTokenLifetime | default "10" | quote }}
   - name: REFRESH_TOKEN_LIFETIME
-    value: {{ int .Values.app.jwt.refreshTokenLifetime | default "24" | quote }}
+    value: {{ int .Values.app.jwt.refreshTokenLifetime | default "2880" | quote }}
   # gunicorn settings
   - name: WGER_USE_GUNICORN
     value: "True"
@@ -126,6 +132,12 @@ environment:
     value: {{ .Values.celery.syncVideos | default "True" | quote }}
   - name: DOWNLOAD_INGREDIENTS_FROM
     value: {{ .Values.celery.ingredientsFrom | default "WGER" | quote }}
+  - name: CELERY_WORKER_CONCURRENCY
+    value: {{ .Values.celery.workerConcurrency | default "4" | quote }}
+  - name: CACHE_API_EXERCISES_CELERY
+    value: {{ .Values.celery.warmupExercisesCache | default "True" | quote }}
+  - name: CACHE_API_EXERCISES_CELERY_FORCE_UPDATE
+    value: {{ .Values.celery.warmupExercisesCacheAll | default "True" | quote }}
   {{- end }}
 {{- end }}
 
@@ -162,7 +174,7 @@ environment:
 
 {{/*
  database settings
- used for wger-app and celery containers
+ used for wger-app, celery and powersync containers
 */}}
 {{- define "database.settings" }}
   - name: DJANGO_DB_HOST
@@ -211,6 +223,8 @@ environment:
 
 {{/*
  powersync settings
+ requires database.settings
+ used for wger-app, celery and powersync containers
 */}}
 {{- define "powersync.settings" }}
   - name: JWT_PRIVATE_KEY
@@ -285,17 +299,23 @@ environment:
 {{- end }}
 
 {{/*
- initContainer web command
- used for celery containers
+ initContainer app command
+ used for celery and powersync containers
 */}}
-{{- define "initContainer.web.command" }}
+{{- define "initContainer.app.command" }}
 {{- $dbhost := .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
 {{- $dbport := .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
+{{- $svcport := .Values.app.service.port | default 8000 | int | quote }}
 - /bin/sh
 - -c
-- until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done &&
+# sleep 35; wait for terminationGracePeriodSeconds of the wger-app container
+# this prevents using the wger-app container which are in the process of termination
+# @todo find a better solution to prevent starting powersync
+# on upgrades before the new wger-app container is ready
+# -> this may be only relevant when upgrading from a "non" powersync setup
+- sleep 35; until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done &&
   until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
-  until wget --spider http://{{ .Release.Name }}-http:80; do echo "Waiting for nginx service ({{ .Release.Name }}-http:80)"; sleep 2; done
+  until nc -zvw10 {{ .Release.Name }}-app {{ $svcport }}; do echo "Waiting for wger app service ({{ .Release.Name }}-app:{{ $svcport }})"; sleep 2; done
 {{- end }}
 
 {{/*
