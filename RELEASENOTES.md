@@ -49,6 +49,7 @@ command.
 * add resource setting possibility for most containers
 * reorganize yamls
 * path in nginx for the static and media files changed, to match docker compose setup
+* celery enabled by default
 * REFRESH_TOKEN_LIFETIME default changed from 24 to 2880
 * EXERCISE_CACHE_TTL default changed from 18000 to 2419200
 * AXES_IPWARE_PROXY_COUNT default changed from 0 to 1

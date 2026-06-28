@@ -37,9 +37,6 @@ app:
       static: wger-static
       celeryBeat: wger-celery-beat
 
-celery:
-    enabled: true
-
 ingress:
   enabled: true
   url: fit.example.com
