@@ -28,8 +28,6 @@ app:
     failureLimit: 10
     # in minutes
     cooloffTime: 30
-    # number of reverse proxies involved
-    ipwareProxyCount: 1
     # order of magnitude from last proxy for the real ip
     ipwareMetaPrecedenceOrder: "X_FORWARDED_FOR,REMOTE_ADDR"
   persistence:
