@@ -180,7 +180,7 @@ powersync:
 # celery tasks
 # https://wger.readthedocs.io/en/latest/celery.html
 celery:
-  enabled: false
+  enabled: true
   annotations: {}
   replicas: 1
   replicasWorker: 1
