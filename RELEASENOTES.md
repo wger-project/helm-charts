@@ -16,7 +16,7 @@ automatically, so don't get confused with the documentation:
 * setups the powersync database
 
 If you upgrade a existing installation the jwt key already exists
-from the previous installation. You have to the jwt secret, alternatively
+from the previous installation. You have to remove the jwt secret, alternatively
 you can set `update: true`, this will force the private and public key to
 be regenerated on every install and upgrade:
 
