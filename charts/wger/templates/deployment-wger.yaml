@@ -10,11 +10,6 @@ spec:
   strategy:
     # kills all old Pods first
     type: Recreate
-  # explicit set the default of 30s grace period
-  # for the container to be SIGKILL'ed, pevents
-  # powersync to start before old containers
-  # are removed 
-  terminationGracePeriodSeconds: 30
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}-app
@@ -31,6 +26,11 @@ spec:
       {{- end }}
     {{- end }}
     spec:
+      # explicit set the default of 30s grace period
+      # for the container to be SIGKILL'ed, pevents
+      # powersync to start before old containers
+      # are removed 
+      terminationGracePeriodSeconds: 30
       {{- with .Values.app.global.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
