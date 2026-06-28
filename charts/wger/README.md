@@ -14,9 +14,9 @@ For a more productive environment you have to enable nginx as a reverse proxy. T
 
 ## Prerequisites
 
-* Kubernetes 1.15+
+* Kubernetes 1.33+
 * Helm 3.0+
-* PV infrastructure on the cluster persistence is needed
+* PV infrastructure (with ReadWriteMany) on the cluster persistence is needed
 * Ingress infrastructure for exposing the installation
 
 
@@ -41,6 +41,7 @@ There is a example of the `values.yaml` in the [example folder](/example/) with 
 
 Please see the [parameters section](#parameters).
 
+**The startup phase of the wger app container is running database migrations, it is crucial that it runs properly.**
 
 ## Parameters
 
