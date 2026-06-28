@@ -44,7 +44,7 @@ environment:
   - name: DJANGO_CACHE_TIMEOUT
     value: {{ int .Values.app.django.cache.timeout | default "1296000" | quote }}
   - name: EXERCISE_CACHE_TTL
-    value: "18000"
+    value: "2419200"
   # django general
   {{- if .Values.ingress.enabled }}
   - name: SITE_URL
@@ -63,6 +63,12 @@ environment:
     value: "False"
   - name: DJANGO_MEDIA_ROOT
     value: "/home/wger/media"
+  # Django Rest Framework
+  # The number of proxies in front of the application. In the default configuration
+  # only nginx is. Change as approtriate if your setup differs. Also note that this
+  # is only used when throttling API requests.
+  - name: NUMBER_OF_PROXIES
+    value: {{ int .Values.app.global.proxyCount | default "1" | quote }}
   # axes
   - name: AXES_ENABLED
   {{- if .Values.app.axes.enabled }}
@@ -77,7 +83,7 @@ environment:
   - name: AXES_COOLOFF_TIME
     value: {{ int .Values.app.axes.cooloffTime | default "30" | quote }}
   - name: AXES_IPWARE_PROXY_COUNT
-    value: {{ int .Values.app.axes.ipwareProxyCount | default "0" | quote }}
+    value: {{ int .Values.app.global.proxyCount | default "1" | quote }}
     # @todo bad default, use the default from axes REMOTE_ADDR only
   - name: AXES_IPWARE_META_PRECEDENCE_ORDER
     value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "HTTP_X_FORWARDED_FOR,REMOTE_ADDR" | quote }}
@@ -87,7 +93,7 @@ environment:
   - name: ACCESS_TOKEN_LIFETIME
     value: {{ int .Values.app.jwt.accessTokenLifetime | default "10" | quote }}
   - name: REFRESH_TOKEN_LIFETIME
-    value: {{ int .Values.app.jwt.refreshTokenLifetime | default "24" | quote }}
+    value: {{ int .Values.app.jwt.refreshTokenLifetime | default "2880" | quote }}
   # gunicorn settings
   - name: WGER_USE_GUNICORN
     value: "True"
@@ -126,6 +132,12 @@ environment:
     value: {{ .Values.celery.syncVideos | default "True" | quote }}
   - name: DOWNLOAD_INGREDIENTS_FROM
     value: {{ .Values.celery.ingredientsFrom | default "WGER" | quote }}
+  - name: CELERY_WORKER_CONCURRENCY
+    value: {{ .Values.celery.workerConcurrency | default "4" | quote }}
+  - name: CACHE_API_EXERCISES_CELERY
+    value: {{ .Values.celery.warmupExercisesCache | default "True" | quote }}
+  - name: CACHE_API_EXERCISES_CELERY_FORCE_UPDATE
+    value: {{ .Values.celery.warmupExercisesCacheAll | default "True" | quote }}
   {{- end }}
 {{- end }}
 

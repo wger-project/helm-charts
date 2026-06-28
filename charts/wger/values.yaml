@@ -14,6 +14,7 @@ app:
     replicas: 1
     securityContext:
       fsGroup: 1000
+    proxyCount: 1
   persistence:
     storageClass: null
     accessModes:
@@ -39,6 +40,9 @@ app:
     annotations: {}
     type: ClusterIP
     port: 8000
+  # number of reverse proxies involved
+  # used for rest api and axes
+  proxyCount: 1
   django:
     secret:
       name: null
@@ -103,8 +107,6 @@ app:
     failureLimit: 10
     # in minutes
     cooloffTime: 30
-    # number of reverse proxies involved
-    ipwareProxyCount: 0
     # order of magnitude from last proxy for the real ip
     ipwareMetaPrecedenceOrder: "HTTP_X_FORWARDED_FOR,REMOTE_ADDR"
   mail:
@@ -182,11 +184,19 @@ celery:
   annotations: {}
   replicas: 1
   replicasWorker: 1
+  workerConcurrency: 4
   securityContext:
     fsGroup: 1000
   syncExercises: true
   syncImages: true
   syncVideos: true
+  # Keep exercise api cache warmed up. This will setup a job that will run once
+  # a week at a random time (this time is selected once when starting the server).
+  # Requires USE_CELERY to be set to true.
+  warmupExercisesCache: true
+  # Whether to force updating the exercise api cache every time the job runs
+  # eg. update all exercises caches
+  warmupExercisesCacheAll: true
   # Where to download ingredient and their images if they are not known locally.
   # Possible values OFF, WGER. Note that it is recommended to keep this as WGER
   # so that we don't overwhelm the Open Food Facts servers. Needs to have USE_CELERY

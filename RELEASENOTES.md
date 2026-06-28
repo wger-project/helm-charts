@@ -49,6 +49,19 @@ command.
 * add resource setting possibility for most containers
 * reorganize yamls
 * path in nginx for the static and media files changed, to match docker compose setup
+* REFRESH_TOKEN_LIFETIME default changed from 24 to 2880
+* EXERCISE_CACHE_TTL default changed from 18000 to 2419200
+* AXES_IPWARE_PROXY_COUNT default changed from 0 to 1
+* CELERY_WORKER_CONCURRENCY added with default 4
+* CACHE_API_EXERCISES_CELERY added with default True
+* CACHE_API_EXERCISES_CELERY_FORCE_UPDATE added with default True
+* replaced .Values.app.axes.ipwareProxyCount with .Values.app.proxyCount
+* NUMBER_OF_PROXIES added with default 1 for REST Framework
+
+### Post Install Tasks
+
+* Some unused thumbnail sizes have been deleted, run `./manage.py prune-thumbnails` to delete dangling files
+* The default location for ingredient images has changed. Please run `./manage migrate-ingredient-image-paths` to migrate existing entries. Note that this is technically optional, as the old paths will continue working, but it is advised for consistency.
 
 ## 0.3.0
 

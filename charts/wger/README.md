@@ -60,7 +60,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.global.annotations`      | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
 | `app.global.replicas`         | Number of webserver instances that should be running. | Integer | `1`           |
 | `app.global.securityContext`  | Pod security context                                  | Object  | see [values.yaml](charts/wger/values.yaml) |
-
+| `app.global.proxyCount`       | Count of proxies                                      | String  | `1`           |
 
 ### Mail
 
@@ -110,20 +110,23 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 
 Celery requires persistent volumes.
 
-| Name                            | Description                   | Type       | Default Value     |
-|---------------------------------|-------------------------------|------------|-------------------|
-| `celery.enabled`                | Enable celery for sync        | Boolean    | `True`            |
-| `celery.annotations`            | Annotations                   | Dictionary | `{}`              |
-| `celery.replicas`               | Enable celery for sync        | Integer    | `1`               |
-| `celery.replicasWorker`         | Enable celery for sync        | Integer    | `1`               |
-| `celery.securityContext`        | Pod security context          | Object     | see [values.yaml](values.yaml) |
-| `celery.syncExercises`          | sync exercises                | Boolean    | `True`            |
-| `celery.syncImages`             | sync exercise images          | Boolean    | `True`            |
-| `celery.syncVideos`             | sync exercise videos          | Boolean    | `True`            |
-| `celery.ingredientsFrom`        | source for ingredients, possible values `WGER`,`OFF` | String  | `WGER`  |
-| `celery.flower.enabled`         | enable flower webinterface for celery | Boolean    | `False`   |
-| `celery.flower.secret.name`     | Name of the secret            | String     | `flower`          |
-| `celery.flower.secret.password` | Password for the webinterface | String     | `randAlphaNum 50` |
+| Name                             | Description                   | Type       | Default Value     |
+|----------------------------------|-------------------------------|------------|-------------------|
+| `celery.enabled`                 | Enable celery for sync        | Boolean    | `True`            |
+| `celery.annotations`             | Annotations                   | Dictionary | `{}`              |
+| `celery.replicas`                | Enable celery for sync        | Integer    | `1`               |
+| `celery.replicasWorker`          | Enable celery for sync        | Integer    | `1`               |
+| `celery.workerConcurrency`       | Set to one if using sqlite    | Integer    | `4`               |
+| `celery.securityContext`         | Pod security context          | Object     | see [values.yaml](values.yaml) |
+| `celery.syncExercises`           | sync exercises                | Boolean    | `True`            |
+| `celery.syncImages`              | sync exercise images          | Boolean    | `True`            |
+| `celery.syncVideos`              | sync exercise videos          | Boolean    | `True`            |
+| `celery.warmupExercisesCache`    | task to warmup cache 1w       | Boolean    | `True`            |
+| `celery.warmupExercisesCacheAll` | warmup all exercises          | Boolean    | `True`            |
+| `celery.ingredientsFrom`         | source for ingredients, possible values `WGER`,`OFF` | String  | `WGER`  |
+| `celery.flower.enabled`          | enable flower webinterface for celery | Boolean    | `False`   |
+| `celery.flower.secret.name`      | Name of the secret            | String     | `flower`          |
+| `celery.flower.secret.password`  | Password for the webinterface | String     | `randAlphaNum 50` |
 
 
 ## JWT
@@ -146,7 +149,6 @@ Celery requires persistent volumes.
 | `app.axes.lockoutParameters`         | List (comma separated string) | String | `"ip_address"` |
 | `app.axes.failureLimit`              | Limit of failed auth          | String | `10` |
 | `app.axes.cooloffTime`               | in Minutes                    | String | `30` |
-| `app.axes.ipwareProxyCount`          | Count of proxies              | String | `0` |
 | `app.axes.ipwareMetaPrecedenceOrder` | Proxy header magnitude | List (comma separated string) | `"HTTP_X_FORWARDED_FOR,REMOTE_ADDR"` |
 
 
