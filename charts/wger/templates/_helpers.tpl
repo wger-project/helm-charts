@@ -162,7 +162,7 @@ environment:
 
 {{/*
  database settings
- used for wger-app and celery containers
+ used for wger-app, celery and powersync containers
 */}}
 {{- define "database.settings" }}
   - name: DJANGO_DB_HOST
@@ -211,6 +211,8 @@ environment:
 
 {{/*
  powersync settings
+ requires database.settings
+ used for wger-app, celery and powersync containers
 */}}
 {{- define "powersync.settings" }}
   - name: JWT_PRIVATE_KEY
@@ -285,17 +287,23 @@ environment:
 {{- end }}
 
 {{/*
- initContainer web command
- used for celery containers
+ initContainer app command
+ used for celery and powersync containers
 */}}
-{{- define "initContainer.web.command" }}
+{{- define "initContainer.app.command" }}
 {{- $dbhost := .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
 {{- $dbport := .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
+{{- $svcport := .Values.app.service.port | default 8000 | int | quote }}
 - /bin/sh
 - -c
-- until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done &&
+# sleep 35; wait for terminationGracePeriodSeconds of the wger-app container
+# this prevents using the wger-app container which are in the process of termination
+# @todo find a better solution to prevent starting powersync
+# on upgrades before the new wger-app container is ready
+# -> this may be only relevant when upgrading from a "non" powersync setup
+- sleep 35; until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) "; sleep 2; done &&
   until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})"; sleep 2; done &&
-  until wget --spider http://{{ .Release.Name }}-http:80; do echo "Waiting for nginx service ({{ .Release.Name }}-http:80)"; sleep 2; done
+  until nc -zvw10 {{ .Release.Name }}-app {{ $svcport }}; do echo "Waiting for wger app service ({{ .Release.Name }}-app:{{ $svcport }})"; sleep 2; done
 {{- end }}
 
 {{/*

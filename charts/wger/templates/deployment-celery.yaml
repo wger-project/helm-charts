@@ -8,6 +8,9 @@ metadata:
     app.kubernetes.io/name: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.celery.replicas }}
+  strategy:
+    # kills all old Pods first
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}-celery
@@ -16,6 +19,8 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-celery
       annotations:
+        # restart on upgrade
+        rollme: {{ randAlphaNum 5 | quote }}
     {{- with .Values.celery.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
@@ -149,8 +154,9 @@ spec:
       initContainers:
         - name: init-container
           image: docker.io/busybox:latest
+          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
           command:
-          {{- include "initContainer.web.command" . | indent 10 }}
+          {{- include "initContainer.app.command" . | indent 10 }}
       volumes:
         - name: wger-celery-beat
           persistentVolumeClaim:
@@ -171,6 +177,9 @@ metadata:
   {{- end }}
 spec:
   replicas: {{ .Values.celery.replicasWorker }}
+  strategy:
+    # kills all old Pods first
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}-celery-worker
@@ -179,6 +188,8 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-celery-worker
       annotations:
+        # restart on upgrade
+        rollme: {{ randAlphaNum 5 | quote }}
     {{- with .Values.celery.annotations }}
       {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote}}
@@ -239,6 +250,15 @@ spec:
                   key: "password"
             {{- end }}
           command: ["/start-worker"]
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - celery -A wger inspect ping
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
             - name: wger-media
               mountPath: /home/wger/media
@@ -252,8 +272,9 @@ spec:
       initContainers:
       - name: init-container
         image: docker.io/busybox:latest
+        imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
         command:
-        {{- include "initContainer.web.command" . | indent 10 }}
+        {{- include "initContainer.app.command" . | indent 10 }}
       volumes:
         - name: wger-media
           persistentVolumeClaim:
