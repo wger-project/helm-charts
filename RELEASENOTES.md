@@ -3,9 +3,10 @@
 This is a major upgrade and has breaking changes. Please review the
 
 * [`values.yaml`](https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml)
-* https://github.com/wger-project/wger/releases/tag/2.6
 
-file and update your own.
+file and update your own. Also have a look at the release note of the wger app:
+
+* https://github.com/wger-project/wger/releases/tag/2.6
 
 First make a backup of your database and media files.
 
@@ -15,7 +16,7 @@ automatically, so don't get confused with the documentation:
 * creates a jwt private and public key
 * setups the powersync database
 
-If you upgrade a existing installation the jwt key already exists
+If you upgrade a existing installation the kubernetes jwt secret already exists
 from the previous installation. You have to remove the jwt secret, alternatively
 you can set `update: true`, this will force the private and public key to
 be regenerated on every install and upgrade:
@@ -30,9 +31,9 @@ app:
 
 The now unused signing key remains in the secret, but serves no purpose.
 
-The first start and even restarting the wger container takes a long time as we now use a
+**The first start and even restarting the wger container takes a long time as we now use a
 post-install hook the helm command can timeout, you have to use `--timeout 15m` on the helm
-command.
+command.**
 
 * upgrade to wger 2.6
 * minor upgrade postgres to 15.18
@@ -44,7 +45,7 @@ command.
 * can append to the current jwt secret
 * nginx and persistent storage is now mandatory
 * nginx get's it's own deployment
-* clean up unused volume definitions
+* remove wger-code volume definitions
 * service and target ports changed
 * add resource setting possibility for most containers
 * reorganize yamls
@@ -56,8 +57,8 @@ command.
 * CELERY_WORKER_CONCURRENCY added with default 4
 * CACHE_API_EXERCISES_CELERY added with default True
 * CACHE_API_EXERCISES_CELERY_FORCE_UPDATE added with default True
-* replaced .Values.app.axes.ipwareProxyCount with .Values.app.proxyCount
-* NUMBER_OF_PROXIES added with default 1 for REST Framework
+* replaced .Values.app.axes.ipwareProxyCount with .Values.app.global.proxyCount
+* NUMBER_OF_PROXIES added with default 1 (for REST Framework)
 
 ### Post Install Tasks
 
