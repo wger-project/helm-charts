@@ -9,7 +9,7 @@ Helm charts for wger deployment on Kubernetes.
 
 This chart bootstraps a wger deployment on a Kubernetes cluster using the Helm package manager, alongside with a PostgreSQL for a database and Redis as a caching service.
 
-For a more productive environment you have to enable nginx as a reverse proxy. This will enable gunicorn in the wger image and will require persistent storages for at least django's media and static files.
+nginx is used to handle sessions and serves django's media and static files. gunicorn in the wger image processes the django code.
 
 
 ## Prerequisites
@@ -261,9 +261,9 @@ wger-app requires for the django database migrations the superuser privileges, s
 
 ## Celery
 
-* https://wger.readthedocs.io/en/latest/celery.html
+* https://wger.readthedocs.io/en/latest/development/celery.html
 
-Celery is used to sync exercises or ingredients. The user for the flower webinterface is `wger`.
+Celery is used to sync exercises or ingredients and has a task to warm up the cache. The user for the flower webinterface is `wger`.
 
 
 ### Monitoring
@@ -275,9 +275,7 @@ Celery is used to sync exercises or ingredients. The user for the flower webinte
 
 ```bash
 export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-celery-worker" -o jsonpath="{.items[0].metadata.name}")
-kubectl -n wger exec -ti $POD -- bash
-
-celery -A wger events
+kubectl -n wger exec -ti $POD -- celery -A wger events
 ```
 
 `celery events` is a simple curses monitor displaying task and worker history.
@@ -285,7 +283,7 @@ celery -A wger events
 
 #### Flower Webinterface
 
-If you have enabled flower you can, for example use port forwarding to connect to the web interface.
+If you have flower enabled, you can use port forwarding to connect to the web interface.
 
 ```bash
 export POD=$(kubectl get pods -n wger -l "app.kubernetes.io/name=wger-celery-worker" -o jsonpath="{.items[0].metadata.name}")
@@ -338,7 +336,7 @@ helm -n wger list
 helm upgrade \
   --timeout 15m \
   --install wger github-wger/wger \
-  --version 0.3.0 \
+  --version 1.0.0 \
   -n wger \
   --create-namespace
   -f values.yaml
