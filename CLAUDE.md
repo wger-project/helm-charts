@@ -34,11 +34,11 @@ helm upgrade --install wger . -n wger --create-namespace -f ../../example/prod_v
 
 ## Architecture
 
-The chart renders **five separate Deployments** (all in `templates/deployment.yaml`), each named `{{ .Release.Name }}-<component>`:
+The chart renders **five separate Deployments** (one `templates/deployment-<component>.yaml` file each; celery and celery-worker share `deployment-celery.yaml`), each named `{{ .Release.Name }}-<component>`:
 
-- **`-app`** — the wger Django server (gunicorn). Has a busybox initContainer (`initContainer.pgonly.command`) that blocks until postgres and redis are reachable.
+- **`-app`** (`deployment-wger.yaml`) — the wger Django server (gunicorn). Has a busybox initContainer (`initContainer.pgonly.command`) that blocks until postgres and redis are reachable.
 - **`-nginx`** — reverse proxy serving Django's media/static files; gated on production setups needing persistent storage.
-- **`-powersync`** — `journeyapps/powersync-service` for the mobile app's offline sync. Connects to the same postgres DB via a dedicated `powersync` DB user.
+- **`-powersync`** — `journeyapps/powersync-service` for the mobile app's offline sync. Connects to the same postgres DB via a dedicated `powersync` DB user. Its storage schema is initialized by a **post-install hook Job** (`templates/hooks/setup-powersync-storage.yaml`) that waits for postgres/redis/nginx, then `kubectl exec`s `./manage.py setup-powersync-storage` in the running app pod. This requires the django DB user to be a superuser, granted via the `wger-pg-init` ConfigMap (`configmap-postgres.yaml`) mounted as a postgres init script.
 - **`-celery`** — celery-beat scheduler + optional celery-flower web UI. Only meaningful when `celery.enabled=true`.
 - **`-celery-worker`** — celery task workers. Its initContainer (`initContainer.web.command`) additionally waits for the nginx service.
 
@@ -59,7 +59,14 @@ When changing app configuration, prefer editing the `wger.env.default` template 
 
 Secrets are created via Helm templates annotated as `pre-install,pre-upgrade,pre-rollback` hooks (`secret-*.yaml`). The recurring **generate-or-preserve password pattern**: if a password value is set in `values.yaml`, use it; otherwise on upgrade `lookup` the existing secret and reuse its value, and only `randAlphaNum` a fresh one on first install. Follow this pattern (see `secret-powersync.yaml`, `secret-redis.yaml`) for any new generated credential.
 
-JWT keys are special: `templates/hooks/jwt-keygen.yaml` runs a **pre-install/upgrade Job** that uses `jose` + `kubectl apply` to generate RS256 JWK keys and write the `jwt` secret. This requires the chart's ServiceAccount + Role/RoleBinding (`serviceaccount.yaml`, `role.yaml`, `rolebinding.yaml`) granting secret access. The `manipulatejwt` / `manipulatemail` helpers in `_helpers.tpl` decide (returning the string `"doit"`) whether a secret should be (re)generated based on existence and the `*.secret.update` flag.
+JWT keys are special: `templates/hooks/jwt-keygen.yaml` runs a **pre-install/upgrade Job** that uses `jose` + `kubectl apply` to generate RS256 JWK keys and write the `jwt` secret. The `manipulatejwt` / `manipulatemail` helpers in `_helpers.tpl` decide (returning the string `"doit"`) whether a secret should be (re)generated based on existence and the `*.secret.update` flag.
+
+### RBAC for hook Jobs
+
+`serviceaccount.yaml`, `role.yaml`, and `rolebinding.yaml` (all pre-install/upgrade/rollback hooks) define **two ServiceAccounts** for the hook Jobs:
+
+- `{{ .Release.Name }}-keygen` → bound to `{{ .Release.Name }}-secret-role` (create/patch/update/get on secrets) — used by the JWT keygen Job.
+- `{{ .Release.Name }}-powersync-initdb` → bound to `{{ .Release.Name }}-pod-exec-role` (get/list on pods, create on `pods/exec`) — used by the powersync storage-setup Job.
 
 ## Conventions
 
