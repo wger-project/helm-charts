@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
+    {{- include "wger.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.app.global.replicas }}
   strategy:
@@ -18,13 +19,10 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-app
       annotations:
-        # restart on upgrade
-        rollme: {{ randAlphaNum 5 | quote }}
-    {{- with .Values.app.global.annotations }}
-      {{- range $key, $value := . }}
-        {{ $key }}: {{ $value | quote}}
-      {{- end }}
-    {{- end }}
+        {{- include "wger.rollme.annotations" . | indent 8 }}
+        {{- with .Values.app.global.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       # explicit set the default of 30s grace period
       # for the container to be SIGKILL'ed, pevents
@@ -38,52 +36,13 @@ spec:
       containers:
         # wger app container
         - name: wger
-          image: "{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          image: {{ include "wger.image" . | quote }}
+          imagePullPolicy: {{ .Values.app.global.image.pullPolicy }}
           env:
             {{- include "wger.env" . | indent 12 }}
             {{- include "database.settings" . | indent 10 }}
             {{- include "powersync.settings" . | indent 10 }}
-            - name: SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.django.secret.name | default "django" | quote }}
-                  key: "secret-key"
-            {{- if .Values.app.mail.enabled }}
-            - name: EMAIL_HOST_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.mail.secret.name | default "mail" | quote }}
-                  key: {{ .Values.app.mail.secret.key | default "mail-password" | quote }}
-            {{- end }}
-            # to enable redis authentication
-            # additional settings in the values
-            # must be made, passed to the redis
-            # container
-            {{- if .Values.redis.auth.enabled }}
-            - name: DJANGO_CACHE_CLIENT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: "redis"
-                  key: "redis-password"
-            - name: CELERY_BROKER
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            - name: CELERY_BACKEND
-              value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            {{- else }}
-            - name: CELERY_BROKER
-              value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            - name: CELERY_BACKEND
-              value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
-            # {{/*- if .Values.redis.auth.enabled */}}
-            {{- end }}
-            {{- if .Values.celery.flower.enabled }}
-            - name: CELERY_FLOWER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.celery.flower.secret.name | default "flower" | quote }}
-                  key: "password"
-            {{- end }}
+            {{- include "wger.env.secrets" . | indent 10 }}
           ports:
             - name: app
               containerPort: 8000
@@ -116,19 +75,19 @@ spec:
             {{- end }}
       initContainers:
         - name: init-container
-          image: docker.io/busybox:latest
-          imagePullPolicy: {{ .Values.app.global.image.PullPolicy }}
+          image: {{ .Values.app.global.initImage }}
+          imagePullPolicy: {{ .Values.app.global.image.pullPolicy }}
           command:
           {{- include "initContainer.pgonly.command" . | indent 10 }}
       volumes:
         - name: wger-media
           persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
+            claimName: {{ .Values.app.persistence.existingClaim.media | default (print .Release.Name "-media") | quote }}
         - name: wger-static
           persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
+            claimName: {{ .Values.app.persistence.existingClaim.static | default (print .Release.Name "-static") | quote }}
         {{- if .Values.celery.enabled }}
         - name: wger-celery-beat
           persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default "wger-celery-beat" | quote }}
+            claimName: {{ .Values.app.persistence.existingClaim.celeryBeat | default (print .Release.Name "-celery-beat") | quote }}
         {{- end }}

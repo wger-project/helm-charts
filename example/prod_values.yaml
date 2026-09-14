@@ -70,11 +70,13 @@ redis:
   auth:
     enabled: true
   # Additional environment variables (Redis server and Sentinel)
+  # the secret is created by the wger chart as <release>-redis;
+  # this example assumes the release is named "wger"
   env:
     - name: REDIS_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: redis
+          name: wger-redis
           key: redis-password
   # Arguments for the container entrypoint process (Redis server)
   args:

@@ -6,11 +6,10 @@ metadata:
   namespace: {{.Release.Namespace}}
   labels:
     app.kubernetes.io/name: {{.Release.Name}}-http
+    {{- include "wger.labels" . | nindent 4 }}
   {{- with .Values.nginx.service.annotations }}
   annotations:
-  {{- range $key, $value := . }}
-    {{ $key }}: {{ $value | quote}}
-  {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.nginx.service.type }}
@@ -30,11 +29,10 @@ metadata:
   namespace: {{.Release.Namespace}}
   labels:
     app.kubernetes.io/name: {{.Release.Name}}-app
+    {{- include "wger.labels" . | nindent 4 }}
   {{- with .Values.app.service.annotations }}
   annotations:
-  {{- range $key, $value := . }}
-    {{ $key }}: {{ $value | quote}}
-  {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.app.service.type }}
@@ -54,11 +52,10 @@ metadata:
   namespace: {{.Release.Namespace}}
   labels:
     app.kubernetes.io/name: {{.Release.Name}}-powersync-api
+    {{- include "wger.labels" . | nindent 4 }}
   {{- with .Values.powersync.serviceApi.annotations }}
   annotations:
-  {{- range $key, $value := . }}
-    {{ $key }}: {{ $value | quote}}
-  {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.powersync.serviceApi.type }}
@@ -78,11 +75,10 @@ metadata:
   namespace: {{.Release.Namespace}}
   labels:
     app.kubernetes.io/name: {{.Release.Name}}-powersync-prometheus
+    {{- include "wger.labels" . | nindent 4 }}
   {{- with .Values.powersync.servicePrometheus.annotations }}
   annotations:
-  {{- range $key, $value := . }}
-    {{ $key }}: {{ $value | quote}}
-  {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   type: {{ .Values.powersync.servicePrometheus.type }}

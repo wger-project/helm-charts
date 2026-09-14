@@ -1,4 +1,28 @@
 {{/*
+ wger app image reference
+ used for the wger-app, celery containers and the powersync-storage hook
+ (also guards against the pre-rename PullPolicy key, since this helper is
+ rendered on every install)
+*/}}
+{{- define "wger.image" -}}
+{{- if or .Values.app.global.image.PullPolicy .Values.powersync.image.PullPolicy -}}
+{{- fail "image.PullPolicy has been renamed to image.pullPolicy - please update your values (app.global.image.pullPolicy / powersync.image.pullPolicy)" -}}
+{{- end -}}
+{{ .Values.app.global.image.registry }}/{{ .Values.app.global.image.repository }}:{{ .Values.app.global.image.tag | default .Chart.AppVersion }}
+{{- end -}}
+
+{{/*
+ common resource labels, appended to the per-resource app.kubernetes.io/name.
+ Not used in pod template / selector labels: selectors are immutable.
+*/}}
+{{- define "wger.labels" -}}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/version: {{ .Values.app.global.image.tag | default .Chart.AppVersion | quote }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+{{- end }}
+
+{{/*
  wger default environment definition
  used for wger-app and celery containers
 */}}
@@ -6,9 +30,13 @@
 environment:
   # general
   - name: TZ
-    value: {{ .Values.app.timezone | default "UTC" | quote }}
+    value: {{ .Values.app.timezone | quote }}
   - name: TIME_ZONE
-    value: {{ .Values.app.timezone | default "UTC" | quote }}
+    value: {{ .Values.app.timezone | quote }}
+  - name: WGER_MAX_SESSION_LENGTH_HOURS
+    value: {{ int .Values.app.maxSessionLengthHours | quote }}
+  - name: WGER_SHOW_APP_STORE_LINKS
+    value: {{ .Values.app.showAppStoreLinks | quote }}
   # email settings
   {{- if .Values.app.mail.enabled }}
   - name: ENABLE_EMAIL
@@ -16,7 +44,7 @@ environment:
   - name: EMAIL_HOST
     value: {{ .Values.app.mail.server | quote }}
   - name: EMAIL_PORT
-    value: {{ .Values.app.mail.port | default "587" | quote }}
+    value: {{ .Values.app.mail.port | quote }}
   - name: EMAIL_HOST_USER
     value: {{ .Values.app.mail.user | quote }}
   - name: FROM_EMAIL
@@ -33,7 +61,7 @@ environment:
   - name: DJANGO_PERFORM_MIGRATIONS
     value: "True"
   - name: DJANGO_DB_ENGINE
-    value: {{ .Values.app.django.existingDatabase.engine | default "django.db.backends.postgresql" | quote }}
+    value: {{ .Values.app.django.existingDatabase.engine | quote }}
   # cache
   - name: DJANGO_CACHE_BACKEND
     value: "django_redis.cache.RedisCache"
@@ -42,7 +70,7 @@ environment:
   - name: DJANGO_CACHE_CLIENT_CLASS
     value: "django_redis.client.DefaultClient"
   - name: DJANGO_CACHE_TIMEOUT
-    value: {{ int .Values.app.django.cache.timeout | default "1296000" | quote }}
+    value: {{ int .Values.app.django.cache.timeout | quote }}
   - name: EXERCISE_CACHE_TTL
     value: "2419200"
   # django general
@@ -68,7 +96,9 @@ environment:
   # only nginx is. Change as approtriate if your setup differs. Also note that this
   # is only used when throttling API requests.
   - name: NUMBER_OF_PROXIES
-    value: {{ int .Values.app.global.proxyCount | default "1" | quote }}
+    value: {{ int .Values.app.global.proxyCount | quote }}
+  - name: USE_X_FORWARDED_HOST
+    value: {{ .Values.app.global.useXForwardedHost | quote }}
   # axes
   - name: AXES_ENABLED
   {{- if .Values.app.axes.enabled }}
@@ -77,23 +107,23 @@ environment:
     value: "False"
   {{- end }}
   - name: AXES_LOCKOUT_PARAMETERS
-    value: {{ .Values.app.axes.lockoutParameters | default "ip_address" | quote }}
+    value: {{ .Values.app.axes.lockoutParameters | quote }}
   - name: AXES_FAILURE_LIMIT
-    value: {{ int .Values.app.axes.failureLimit | default "10" | quote }}
+    value: {{ int .Values.app.axes.failureLimit | quote }}
   - name: AXES_COOLOFF_TIME
-    value: {{ int .Values.app.axes.cooloffTime | default "30" | quote }}
+    value: {{ int .Values.app.axes.cooloffTime | quote }}
   - name: AXES_IPWARE_PROXY_COUNT
-    value: {{ int .Values.app.global.proxyCount | default "1" | quote }}
+    value: {{ int .Values.app.global.proxyCount | quote }}
     # @todo bad default, use the default from axes REMOTE_ADDR only
   - name: AXES_IPWARE_META_PRECEDENCE_ORDER
-    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | default "HTTP_X_FORWARDED_FOR,REMOTE_ADDR" | quote }}
+    value: {{ .Values.app.axes.ipwareMetaPrecedenceOrder | quote }}
   - name: AXES_HANDLER
     value: "axes.handlers.cache.AxesCacheHandler"
   # jwt auth
   - name: ACCESS_TOKEN_LIFETIME
-    value: {{ int .Values.app.jwt.accessTokenLifetime | default "10" | quote }}
+    value: {{ int .Values.app.jwt.accessTokenLifetime | quote }}
   - name: REFRESH_TOKEN_LIFETIME
-    value: {{ int .Values.app.jwt.refreshTokenLifetime | default "2880" | quote }}
+    value: {{ int .Values.app.jwt.refreshTokenLifetime | quote }}
   # gunicorn settings
   - name: WGER_USE_GUNICORN
     value: "True"
@@ -125,19 +155,19 @@ environment:
   - name: USE_CELERY
     value: "True"
   - name: SYNC_EXERCISES_CELERY
-    value: {{ .Values.celery.syncExercises | default "True" | quote }}
+    value: {{ .Values.celery.syncExercises | quote }}
   - name: SYNC_EXERCISE_IMAGES_CELERY
-    value: {{ .Values.celery.syncImages | default "True" | quote }}
+    value: {{ .Values.celery.syncImages | quote }}
   - name: SYNC_EXERCISE_VIDEOS_CELERY
-    value: {{ .Values.celery.syncVideos | default "True" | quote }}
+    value: {{ .Values.celery.syncVideos | quote }}
   - name: DOWNLOAD_INGREDIENTS_FROM
-    value: {{ .Values.celery.ingredientsFrom | default "WGER" | quote }}
+    value: {{ .Values.celery.ingredientsFrom | quote }}
   - name: CELERY_WORKER_CONCURRENCY
-    value: {{ .Values.celery.workerConcurrency | default "4" | quote }}
+    value: {{ .Values.celery.workerConcurrency | quote }}
   - name: CACHE_API_EXERCISES_CELERY
-    value: {{ .Values.celery.warmupExercisesCache | default "True" | quote }}
+    value: {{ .Values.celery.warmupExercisesCache | quote }}
   - name: CACHE_API_EXERCISES_CELERY_FORCE_UPDATE
-    value: {{ .Values.celery.warmupExercisesCacheAll | default "True" | quote }}
+    value: {{ .Values.celery.warmupExercisesCacheAll | quote }}
   {{- end }}
 {{- end }}
 
@@ -173,6 +203,61 @@ environment:
 {{- end }}
 
 {{/*
+ secret-backed environment entries: django SECRET_KEY, mail password,
+ celery broker/backend URLs (with or without redis authentication) and
+ the flower password
+ used for wger-app and celery containers
+*/}}
+{{- define "wger.env.secrets" }}
+  - name: SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "wger.secretName.django" . | quote }}
+        key: "secret-key"
+  {{- if .Values.app.mail.enabled }}
+  - name: EMAIL_HOST_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "wger.secretName.mail" . | quote }}
+        key: {{ .Values.app.mail.secret.key | quote }}
+  {{- end }}
+  {{- if .Values.app.oauth2Provider.enabled }}
+  - name: IDP_OIDC_PRIVATE_KEY
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "wger.secretName.oidc" . | quote }}
+        key: "private-key"
+  {{- end }}
+  {{- /*
+   to enable redis authentication additional settings in the values
+   must be made, passed to the redis container
+  */}}
+  {{- if .Values.redis.auth.enabled }}
+  - name: DJANGO_CACHE_CLIENT_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: {{ print .Release.Name "-redis" | quote }}
+        key: "redis-password"
+  - name: CELERY_BROKER
+    value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+  - name: CELERY_BACKEND
+    value: "redis://:$(DJANGO_CACHE_CLIENT_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+  {{- else }}
+  - name: CELERY_BROKER
+    value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+  - name: CELERY_BACKEND
+    value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/2"
+  {{- end }}
+  {{- if .Values.celery.flower.enabled }}
+  - name: CELERY_FLOWER_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "wger.secretName.flower" . | quote }}
+        key: "password"
+  {{- end }}
+{{- end }}
+
+{{/*
  database settings
  used for wger-app, celery and powersync containers
 */}}
@@ -186,21 +271,21 @@ environment:
     valueFrom:
       secretKeyRef:
         name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
-        key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | default "USERDB_USER" | quote }}
+        key: {{ .Values.app.django.existingDatabase.existingSecret.dbuserKey | quote }}
   - name: DJANGO_DB_PASSWORD
     valueFrom:
       secretKeyRef:
         name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
-        key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | default "USERDB_PASSWORD" | quote }}
+        key: {{ .Values.app.django.existingDatabase.existingSecret.dbpwKey | quote }}
     {{- if .Values.app.django.existingDatabase.existingSecret.dbnameKey }}
   - name: DJANGO_DB_DATABASE
     valueFrom:
       secretKeyRef:
         name: {{ .Values.app.django.existingDatabase.existingSecret.name | default (print .Release.Name "-existing-database") | quote }}
-        key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | default "USERDB_NAME" | quote }}
+        key: {{ .Values.app.django.existingDatabase.existingSecret.dbnameKey | quote }}
     {{- else }}
   - name: DJANGO_DB_DATABASE
-    value: {{ .Values.app.django.existingDatabase.dbname | default "wger" | quote }}
+    value: {{ .Values.app.django.existingDatabase.dbname | quote }}
     {{- end }}
   {{- else }}
   - name: DJANGO_DB_USER
@@ -230,12 +315,12 @@ environment:
   - name: JWT_PRIVATE_KEY
     valueFrom:
       secretKeyRef:
-        name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+        name: {{ include "wger.secretName.jwt" . | quote }}
         key: "private-key"
   - name: JWT_PUBLIC_KEY
     valueFrom:
       secretKeyRef:
-        name: {{ .Values.app.jwt.secret.name | default "jwt" | quote }}
+        name: {{ include "wger.secretName.jwt" . | quote }}
         key: "public-key"
   # This is the path (inside the container) to the YAML config file
   # Alternatively the config path can be specified in the command
@@ -248,11 +333,7 @@ environment:
   # or e.g.: Via a command line parameter
   #    command: ['start', '-r', 'unified', '-c64', '[base64 encoded content]']
   - name: POWERSYNC_CONFIG_PATH
-    {{- if .Values.powersync.configPath }}
     value: {{ .Values.powersync.configPath | quote }}
-    {{- else }}
-    value: "/config/powersync.yaml"
-    {{- end }}
   # Sync rules can be specified as base 64 encoded YAML
   # e.g: Via an environment variable
   # POWERSYNC_SYNC_RULES_B64: "[base64 encoded sync rules]"
@@ -272,12 +353,12 @@ environment:
   - name: PS_DB_USER
     valueFrom:
       secretKeyRef:
-        name:  "powersync"
+        name: {{ print .Release.Name "-powersync" | quote }}
         key: "user"
   - name: PS_DB_PASSWORD
     valueFrom:
       secretKeyRef:
-        name:  "powersync"
+        name: {{ print .Release.Name "-powersync" | quote }}
         key: "pw"
   - name: PS_STORAGE_PG_URI
     value: "postgres://$(PS_DB_USER):$(PS_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
@@ -305,7 +386,7 @@ environment:
 {{- define "initContainer.app.command" }}
 {{- $dbhost := .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
 {{- $dbport := .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
-{{- $svcport := .Values.app.service.port | default 8000 | int | quote }}
+{{- $svcport := .Values.app.service.port | int | quote }}
 - /bin/sh
 - -c
 # sleep 35; wait for terminationGracePeriodSeconds of the wger-app container
@@ -319,12 +400,100 @@ environment:
 {{- end }}
 
 {{/*
+ secret names: user override from values, or a release-prefixed default
+*/}}
+{{- define "wger.secretName.django" -}}
+{{- .Values.app.django.secret.name | default (print .Release.Name "-django") -}}
+{{- end -}}
+{{- define "wger.secretName.mail" -}}
+{{- .Values.app.mail.secret.name | default (print .Release.Name "-mail") -}}
+{{- end -}}
+{{- define "wger.secretName.jwt" -}}
+{{- .Values.app.jwt.secret.name | default (print .Release.Name "-jwt") -}}
+{{- end -}}
+{{- define "wger.secretName.flower" -}}
+{{- .Values.celery.flower.secret.name | default (print .Release.Name "-flower") -}}
+{{- end -}}
+{{- define "wger.secretName.oidc" -}}
+{{- .Values.app.oauth2Provider.secret.name | default (print .Release.Name "-oidc") -}}
+{{- end -}}
+
+{{/*
+ generate-or-preserve secret value
+ - if a value is configured in values.yaml, use it
+ - otherwise reuse the value from the existing secret (upgrades)
+ - otherwise generate a random one (first install)
+ Call with: (dict "ctx" $ "name" <secret name> "key" <secret key>
+                  "value" <configured value> "length" <random length>)
+ Optional: "legacyName" — pre-2.0 unprefixed secret name; its value is
+ reused once when the release-prefixed secret does not exist yet, so
+ upgrades keep their generated passwords.
+ Optional: "rsa" — generate a PEM encoded RSA private key instead of a
+ random string ("length" is ignored).
+ Returns the plain (not base64 encoded) value.
+*/}}
+{{- define "wger.secretValue" -}}
+{{- if .value -}}
+{{- .value -}}
+{{- else -}}
+{{- $data := (lookup "v1" "Secret" .ctx.Release.Namespace .name).data -}}
+{{- if and .legacyName (not (and $data (index $data .key))) -}}
+{{- $data = (lookup "v1" "Secret" .ctx.Release.Namespace .legacyName).data -}}
+{{- end -}}
+{{- if and $data (index $data .key) -}}
+{{- index $data .key | b64dec -}}
+{{- else if .rsa -}}
+{{- genPrivateKey "rsa" -}}
+{{- else -}}
+{{- randAlphaNum (.length | int) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+ checksum over all values that end up in secrets referenced by the pods.
+ Used as a pod template annotation so pods restart when a secret's content
+ changes: secret values are resolved at container start via secretKeyRef,
+ so a change in the secret alone does not alter the pod spec and would
+ otherwise not trigger a rollout.
+*/}}
+{{- define "wger.checksum.secrets" -}}
+{{- dict "django" .Values.app.django.secret
+         "database" .Values.app.django.existingDatabase
+         "postgres" .Values.postgres.settings
+         "postgresUser" .Values.postgres.userDatabase
+         "mail" .Values.app.mail.secret
+         "redis" .Values.redis.auth
+         "flower" .Values.celery.flower.secret
+         "jwt" .Values.app.jwt.secret
+         "oidc" .Values.app.oauth2Provider
+         "powersync" .Values.powersync.secretDatabase
+    | toJson | sha256sum -}}
+{{- end -}}
+
+{{/*
+ pod template annotations driving restarts on config changes
+ used for wger-app and celery pods (powersync adds a configmap checksum)
+*/}}
+{{- define "wger.rollme.annotations" }}
+checksum/secrets: {{ include "wger.checksum.secrets" . }}
+{{- /*
+ while jwt.secret.update is set and no key is supplied, the keygen hook
+ generates fresh random keys on every upgrade; no checksum can see that,
+ so force a restart the old-fashioned way
+*/}}
+{{- if and .Values.app.jwt.secret.update (not .Values.app.jwt.secret.privateKey) }}
+rollme: {{ randAlphaNum 5 | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
  "manipulateXX" definitions
  used for secret creation or update
 */}}
 # jwt secret
 {{- define "manipulatejwt" -}}
-{{- if (lookup "v1" "Secret" .Release.Namespace .Values.app.jwt.secret.name) -}}
+{{- if (lookup "v1" "Secret" .Release.Namespace (include "wger.secretName.jwt" .)) -}}
   {{- if .Values.app.jwt.secret.update -}}
 doit
   {{- end -}}
@@ -334,7 +503,7 @@ doit
 {{- end -}}
 # mail secret
 {{- define "manipulatemail" -}}
-{{- if (lookup "v1" "Secret" .Release.Namespace .Values.app.mail.secret.name) -}}
+{{- if (lookup "v1" "Secret" .Release.Namespace (include "wger.secretName.mail" .)) -}}
   {{- if .Values.app.mail.secret.update -}}
     {{- if .Values.app.mail.secret.password -}}
 doit

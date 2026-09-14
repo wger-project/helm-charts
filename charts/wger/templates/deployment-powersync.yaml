@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
+    {{- include "wger.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.powersync.replicas }}
   strategy:
@@ -18,13 +19,12 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-powersync
       annotations:
-        # restart on upgrade
-        rollme: {{ randAlphaNum 5 | quote }}
-    {{- with .Values.powersync.annotations }}
-      {{- range $key, $value := . }}
-        {{ $key }}: {{ $value | quote}}
-      {{- end }}
-    {{- end }}
+        {{- include "wger.rollme.annotations" . | indent 8 }}
+        # restart when the mounted powersync config changes
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-powersync.yaml") . | sha256sum }}
+        {{- with .Values.powersync.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.powersync.securityContext }}
       securityContext:
@@ -33,7 +33,7 @@ spec:
       containers:
         - name: powersync
           image: "{{ .Values.powersync.image.registry }}/{{ .Values.powersync.image.repository }}:{{ .Values.powersync.image.tag }}"
-          imagePullPolicy: {{ .Values.powersync.image.PullPolicy }}
+          imagePullPolicy: {{ .Values.powersync.image.pullPolicy }}
           env:
             {{- include "database.settings" . | indent 10 }}
             {{- include "powersync.settings" . | indent 10 }}
@@ -75,8 +75,8 @@ spec:
           {{- end }}
       initContainers:
         - name: init-container
-          image: docker.io/alpine:latest
-          imagePullPolicy: {{ .Values.powersync.image.PullPolicy }}
+          image: {{ .Values.app.global.initImage }}
+          imagePullPolicy: {{ .Values.app.global.image.pullPolicy }}
           command:
           {{- include "initContainer.app.command" . | indent 10 }}
       volumes:

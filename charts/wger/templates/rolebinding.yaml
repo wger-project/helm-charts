@@ -14,20 +14,3 @@ roleRef:
   kind: Role
   name: {{ .Release.Name }}-secret-role
   apiGroup: rbac.authorization.k8s.io
----
-# for powersync database initialization
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: {{ .Release.Name }}-powersync-initdb
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade,pre-rollback
-    helm.sh/hook-weight: "-6"
-subjects:
-  - kind: ServiceAccount
-    name: {{ .Release.Name }}-powersync-initdb
-roleRef:
-  kind: Role
-  name: {{ .Release.Name }}-pod-exec-role
-  apiGroup: rbac.authorization.k8s.io

@@ -11,18 +11,3 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["create", "patch", "update", "get"]
----
-# pod exec permission - currently used for powersync database initialization
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ .Release.Name }}-pod-exec-role
-  namespace: {{ .Release.Namespace }}
-rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list"]
-# exec is a subresource: it requires `create` on pods/exec, not an `exec` verb on pods
-- apiGroups: [""]
-  resources: ["pods/exec"]
-  verbs: ["create"]

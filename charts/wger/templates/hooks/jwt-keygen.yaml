@@ -8,6 +8,7 @@ metadata:
   name: {{ .Release.Name }}-keygen
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
+    {{- include "wger.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "-5"
@@ -19,7 +20,7 @@ spec:
       serviceAccountName: {{ .Release.Name }}-keygen
       containers:
         - name: keygen
-          image: alpine:latest
+          image: {{ .Values.app.jwt.keygenImage }}
           command:
             - sh
             - -c
@@ -42,7 +43,7 @@ spec:
               apiVersion: v1
               kind: Secret
               metadata:
-                name: {{ .Values.app.jwt.secret.name | default "jwt" }}
+                name: {{ include "wger.secretName.jwt" . }}
                 namespace: {{ .Release.Namespace }}
               stringData:
                 private-key: {{ .Values.app.jwt.secret.privateKey | default "NEW_PRIVATEKEY" | quote }}

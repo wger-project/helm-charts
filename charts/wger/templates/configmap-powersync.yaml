@@ -64,6 +64,15 @@ data:
     # The port which the PowerSync API server will listen on
     port: !env PS_PORT
 
+    # Workaround for PSYNC_S2305 bug: PowerSync counts source rows instead of DISTINCT
+    # CTE results. Users with large nutrition logs (>1000 log items) can hit the limit
+    # even though the number of distinct ingredients is well below it.
+    # See https://github.com/powersync-ja/powersync-service/issues/682
+    #     https://github.com/wger-project/flutter/issues/1237
+    api:
+      parameters:
+        max_parameter_query_results: 10000
+
     # Specify sync rules
     sync_rules:
       path: sync_rules.yaml
@@ -87,6 +96,19 @@ data:
   sync_rules.yaml: |
     # Note that changes to this file are not watched.
     # The service needs to be restarted for changes to take effect.
+    #
+    # A column added server-side does not reach rows already in bucket storage:
+    # the queries below (SELECT * included) only run when a row is replicated, and
+    # an AddField emits no WAL. After such a migration either run a backfill that
+    # touches the rows, or bump the version line below so the changed file forces
+    # a reprocess
+    #
+    # Sync rules version: 1
+
+    # Every table referenced here must be part of the "powersync" publication, which
+    # lists its tables explicitly (see the server's core migration 0027). Reading from
+    # a table that was not synced before also needs
+    # `ALTER PUBLICATION powersync ADD TABLE <table>;`
 
     # Warning: a user may have at most 1000 buckets, i.e. parameter-query results
     # summed across all streams. This counts the *parameter* rows, not the data
@@ -148,7 +170,7 @@ data:
                     SELECT nutrition_logitem.ingredient_id FROM nutrition_logitem
                     JOIN nutrition_nutritionplan ON nutrition_logitem.plan_id = nutrition_nutritionplan.id
                     WHERE CAST(nutrition_nutritionplan.user_id AS TEXT) = auth.user_id())
-              OR nutrition_synced_ingredient.id IN (
+               OR nutrition_synced_ingredient.id IN (
                     SELECT nutrition_mealitem.ingredient_id FROM nutrition_mealitem
                     JOIN nutrition_meal ON nutrition_mealitem.meal_id = nutrition_meal.id
                     JOIN nutrition_nutritionplan ON nutrition_meal.plan_id = nutrition_nutritionplan.id
@@ -170,14 +192,8 @@ data:
           # Routines (templates excluded)
           - SELECT * FROM manager_routine WHERE CAST(user_id AS TEXT) = auth.user_id() AND is_template = FALSE
 
-          # Measurements
+          # Measurement categories (the measurements themselves are HOT, see below)
           - SELECT * FROM measurements_category WHERE CAST(user_id AS TEXT) = auth.user_id()
-          - |
-            SELECT measurements_measurement.*
-            FROM measurements_measurement
-            INNER JOIN measurements_category
-              ON measurements_measurement.category_id = measurements_category.id
-            WHERE CAST(measurements_category.user_id AS TEXT) = auth.user_id()
 
           # Nutrition plan structure (not the log items)
           - SELECT * FROM nutrition_nutritionplan WHERE CAST(user_id AS TEXT) = auth.user_id()
@@ -202,8 +218,13 @@ data:
       user_activity:
         auto_subscribe: true
         queries:
-          # Weight tracking
-          - SELECT uuid AS id, weight, date, user_id FROM weight_weightentry WHERE CAST(user_id AS TEXT) = auth.user_id()
+          # Measurements, including body weight entries, so typically one or more new rows per day
+          - |
+            SELECT measurements_measurement.*
+            FROM measurements_measurement
+            INNER JOIN measurements_category
+              ON measurements_measurement.category_id = measurements_category.id
+            WHERE CAST(measurements_category.user_id AS TEXT) = auth.user_id()
 
           # Workout sessions and per-set logs
           - SELECT * FROM manager_workoutsession WHERE CAST(user_id AS TEXT) = auth.user_id()

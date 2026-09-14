@@ -1,3 +1,136 @@
+
+## 2.0.0-rc.1
+
+This is a maintainability release with **breaking changes** to resource names
+and two values keys. First make a backup of your database and media files.
+
+* upgrade to wger 2.7, also have a look at the release note of the wger app:
+  https://github.com/wger-project/wger/releases/tag/2.7
+* **before upgrading** make sure `app.timezone` is set correctly and treat it as
+  fixed afterwards: the 2.7 migrations convert the old workout session dates
+  using this zone
+* new wger 2.7 settings: `app.maxSessionLengthHours` (default `5`),
+  `app.showAppStoreLinks` (default `true`) and `app.global.useXForwardedHost`
+  (default `false`)
+* powersync sync rules updated for wger 2.7: the removed `weight_weightentry`
+  table is gone, body weight entries are synced as measurements. Stop powersync
+  while the wger 2.7 database migrations run, then start it again (use
+  `powersync.replicas`, a `kubectl scale` is reverted by `helm upgrade`):
+
+  ```bash
+  helm upgrade ... --set powersync.replicas=0
+  kubectl -n <namespace> rollout status deploy <release>-app   # migrations done
+  helm upgrade ...
+  ```
+  PowerSync reprocesses all buckets once with the new rules.
+* powersync `api.parameters.max_parameter_query_results` raised to 10000 as a
+  workaround for the PSYNC_S2305 bug with large nutrition logs
+* new optional OAuth2/OIDC provider: `app.oauth2Provider.enabled` (default
+  `false`) creates the `<release>-oidc` secret with a generated signing key
+  (or `app.oauth2Provider.secret.privateKey`)
+
+### Breaking: resources are now prefixed with the release name
+
+All fixed-name resources are now named `<release>-<suffix>`, so several
+releases can share a namespace:
+
+| old name | new name |
+|----------------------|--------------------------|
+| secret `django` | `<release>-django` |
+| secret `mail` | `<release>-mail` |
+| secret `jwt` | `<release>-jwt` |
+| secret `flower` | `<release>-flower` |
+| secret `redis` | `<release>-redis` |
+| secret `powersync` | `<release>-powersync` |
+| pvc `wger-media` | `<release>-media` |
+| pvc `wger-static` | `<release>-static` |
+| pvc `wger-celery-beat` | `<release>-celery-beat` |
+
+(the `wger-pg-init` ConfigMap keeps its static name — it must match the
+untemplatable `postgres.extraScripts` subchart value)
+
+Upgrade notes:
+
+* **Generated passwords are preserved automatically**: on the first upgrade
+  the new secrets copy their values from the old unprefixed ones.
+* **PVCs / your data**: if your release is named `wger` the media and static
+  PVC names are unchanged (`wger-media` etc.) and nothing happens. For any
+  other release name, point the chart at your existing claims **before**
+  upgrading, otherwise the volumes are recreated empty:
+
+  ```yaml
+  app:
+    persistence:
+      existingClaim:
+        enabled: true
+        media: wger-media
+        static: wger-static
+        celeryBeat: wger-celery-beat
+  ```
+* **JWT**: the keygen hook creates fresh keys under `<release>-jwt`, so mobile
+  clients have to log in again once. To avoid this, pin the old secret name:
+
+  ```yaml
+  app:
+    jwt:
+      secret:
+        name: "jwt"
+  ```
+  (the same opt-out works for the django, mail and flower secret names)
+* **Redis authentication**: if you enabled it, update the `secretKeyRef` in
+  your `redis.env` values block from `redis` to `<release>-redis`.
+* The old unprefixed secrets are left behind and can be deleted once the
+  upgrade is verified.
+
+### Breaking: `PullPolicy` renamed to `pullPolicy`
+
+`app.global.image.PullPolicy` and `powersync.image.PullPolicy` are now
+lowercase `pullPolicy`. Installs still using the old key fail with a clear
+error message instead of silently ignoring the setting.
+
+### Behavior changes
+
+* pods no longer restart on every `helm upgrade`: the random `rollme`
+  annotation was replaced with checksums over the values that feed the
+  secrets and mounted configmaps. Pods restart only when their configuration
+  actually changes. Exception: while `app.jwt.secret.update: true` is set
+  without explicit keys, every upgrade still restarts the JWT consumers.
+* the django `SECRET_KEY` and the flower password are no longer regenerated
+  on every upgrade — user sessions now survive upgrades
+* the celery sync/cache booleans (`celery.syncExercises`, `celery.syncImages`,
+  `celery.syncVideos`, `celery.warmupExercisesCache`,
+  `celery.warmupExercisesCacheAll`) can now actually be set to `false`;
+  previously `false` was silently rendered as `"True"`
+* the powersync database initialization hook now runs
+  `./manage.py setup-powersync-storage` in its own pod using the wger image
+  instead of `kubectl exec`-ing into the app pod; the pod-exec
+  ServiceAccount/Role/RoleBinding were removed
+* the nginx pod now restarts when its configmap changes (previously it kept
+  running with the old config)
+
+### Other changes
+
+* new CronJob `<release>-powersync-compact` runs the powersync service's
+  `compact` command daily (at 03:00) to reclaim sync bucket storage, which
+  self-hosted instances don't do on their own. Configure via
+  `powersync.compact.enabled` / `schedule` / `resources`
+* initContainer and hook images are pinned and configurable:
+  `app.global.initImage` (default `docker.io/busybox:1.37`) and
+  `app.jwt.keygenImage` (default `docker.io/alpine:3.22`)
+* the `wger-pg-init` ConfigMap is only created when `postgres.enabled` is true
+* standard labels (`app.kubernetes.io/instance`, `version`, `managed-by`,
+  `helm.sh/chart`) added to all chart resources
+* removed unused values `app.proxyCount` (use `app.global.proxyCount`) and
+  `powersync.replicasWorker`
+* removed the unused `REFRESH_TOKEN_LIFETIME` template fallback of 2880; the
+  effective default stays 24 (hours) as set in `values.yaml`
+* defaults now live in `values.yaml` instead of being duplicated in the
+  templates; `app.mail.port` (587), `app.django.existingDatabase.engine`,
+  `existingSecret.dbuserKey`/`dbpwKey` (`USERDB_USER`/`USERDB_PASSWORD`) and
+  `powersync.configPath` now show their real defaults
+* large internal template refactoring (shared env/image/label/secret helpers),
+  no rendering changes beyond the ones listed above
+
 ## 1.0.0
 
 This is a major upgrade and has breaking changes. Please review the

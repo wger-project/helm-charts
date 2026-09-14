@@ -3,18 +3,27 @@ app:
   # The server's timezone, for a list of possible names:
   # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
   timezone: "UTC"
+  # maximum length of a workout session in hours, sessions can span midnight
+  maxSessionLengthHours: 5
+  # show the links to the mobile app stores
+  showAppStoreLinks: true
   global:
     image:
       registry: docker.io
       repository: wger/server
       # when tag left emtpy the Chart appversion will be taken
       # tag: latest
-      PullPolicy: IfNotPresent
+      pullPolicy: IfNotPresent
+    # image for the wait-for-service initContainers (needs /bin/sh and nc)
+    initImage: docker.io/busybox:1.37
     annotations: {}
     replicas: 1
     securityContext:
       fsGroup: 1000
     proxyCount: 1
+    # build absolute URLs (e.g. OAuth2 redirect URIs) from the X-Forwarded-Host
+    # header instead of the Host header. The nginx of this chart always sets it.
+    useXForwardedHost: false
   persistence:
     storageClass: null
     accessModes:
@@ -40,12 +49,11 @@ app:
     annotations: {}
     type: ClusterIP
     port: 8000
-  # number of reverse proxies involved
-  # used for rest api and axes
-  proxyCount: 1
   django:
     secret:
+      # null defaults to <release>-django
       name: null
+      # null generates a random secret key on first install
       key: null
     cache:
       # in seconds - 60*60*24*15, 15 Days
@@ -57,30 +65,30 @@ app:
     # except you use a existingSecret
     existingDatabase:
       enabled: false
-      engine: null
+      engine: django.db.backends.postgresql
       host: null
       port: null
       dbname: wger
       dbuser: wger
       dbpw: null
       # optionally use a existing secret containing the database credentials
-      # if you don't set a *Key it will look for the following keys
-      # USERDB_USER / USERDB_PASSWORD / USERDB_NAME
-      # in the secret
       existingSecret:
         # name of the secret
         name: null
-        # overrides app.django.existingDatabase.dbname
-        # optional; defaults to app.django.existingDatabase.dbname / "wger"
+        # secret key holding the database name
+        # optional; when null app.django.existingDatabase.dbname is used instead
         dbnameKey: null
-        # overrides app.django.existingDatabase.dbuser
-        dbuserKey: null
-        # overrides app.django.existingDatabase.dbpw
-        dbpwKey: null
+        # secret key holding the database user
+        dbuserKey: USERDB_USER
+        # secret key holding the database password
+        dbpwKey: USERDB_PASSWORD
   # JWT auth
   jwt:
+    # image for the keygen hook job (needs apk to install jose/python3/kubectl)
+    keygenImage: docker.io/alpine:3.22
     secret:
-      name: "jwt"
+      # null defaults to <release>-jwt
+      name: null
       # JWT keys, used by the mobile app.
       # Officaly you can generate fresh keys with: docker compose exec web ./manage.py generate-jwt-keys
       #
@@ -98,7 +106,18 @@ app:
     # The lifetime duration of the access token, in minutes
     accessTokenLifetime: 10
     # The lifetime duration of the refresh token, in hours
-    refreshTokenLifetime: 24
+    refreshTokenLifetime: 2880
+  # OAuth2/OIDC provider, lets other applications log in with a wger account
+  # clients have to be registered manually, see
+  # https://wger.readthedocs.io/en/latest/administration/oauth2_provider.html
+  oauth2Provider:
+    enabled: false
+    secret:
+      # null defaults to <release>-oidc
+      name: null
+      # RS256 signing key in PEM format, e.g. from `./manage.py generate-oidc-key`
+      # null generates a random RSA key on first install
+      privateKey: null
   # axes Brute force login attacks
   # https://django-axes.readthedocs.io/en/latest/index.html
   axes:
@@ -112,14 +131,15 @@ app:
   mail:
     enabled: false
     server: null
-    port: null
+    port: 587
     user: null
     from_email: null
     # Set your name and email to be notified if an internal server error occurs.
     # don't set django_admins when not needed
     django_admins: null
     secret:
-      name: mail
+      # null defaults to <release>-mail
+      name: null
       key: mail-password
       password: null
       update: false
@@ -147,10 +167,9 @@ powersync:
     registry: docker.io
     repository: journeyapps/powersync-service
     tag: latest
-    PullPolicy: IfNotPresent
+    pullPolicy: IfNotPresent
   annotations: {}
   replicas: 1
-  replicasWorker: 1
   securityContext:
     fsGroup: 1000
   serviceApi:
@@ -167,8 +186,15 @@ powersync:
     user: "powersync_storage"
     # null for a random password when installing
     pw: null
-  configPath: null
+  configPath: "/config/powersync.yaml"
+  # null derives the URL from the nginx service of this release
   jwksURL: null
+  # daily CronJob compacting the powersync bucket storage
+  compact:
+    enabled: true
+    # cron format, in the timezone of the kube-controller-manager (usually UTC)
+    schedule: "0 3 * * *"
+    resources: null
   resources: null
     # requests:
     #   memory: 512Mi
@@ -213,7 +239,9 @@ celery:
   flower:
     enabled: false
     secret:
+      # null defaults to <release>-flower
       name: null
+      # null generates a random password on first install
       password: null
     resources: null
     # requests:
@@ -290,14 +318,16 @@ redis:
     # default no password set, this will randomly create
     # one upon first installation
     # password: XXXXXXXXXXXXXXXXXX
-  # Uncomment the following to enable password authentication:
+  # Uncomment the following to enable password authentication
+  # (replace <release> with your helm release name; the secret is
+  # created by this chart as <release>-redis):
   #
   # # Additional environment variables (Redis server and Sentinel)
   # env:
   #   - name: REDIS_PASSWORD
   #     valueFrom:
   #       secretKeyRef:
-  #         name: redis
+  #         name: <release>-redis
   #         key: redis-password
   # # Arguments for the container entrypoint process (Redis server)
   # args:

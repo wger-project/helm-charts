@@ -1,10 +1,7 @@
-{{- $dbhost := .Values.app.django.existingDatabase.host | default (print .Release.Name "-postgres") | quote }}
-{{- $dbport := .Values.app.django.existingDatabase.port | default .Values.postgres.service.port | int | quote }}
-{{- $svcport := .Values.app.service.port | default 8000 | int | quote }}
-# post-install hook: initialize the powersync storage schema/user in the DB by
-# running `./manage.py setup-powersync-storage` inside the running wger pod.
-# Authenticates with the dedicated {{ .Release.Name }}-powersync-initdb SA,
-# which is granted get/list on pods and create on pods/exec (role.yaml).
+# post-install hook: initialize the powersync storage schema/user in the DB
+# by running `./manage.py setup-powersync-storage` in its own pod, using the
+# same image and environment as the wger app container. Only needs database
+# access — no ServiceAccount/RBAC.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -12,6 +9,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
+    {{- include "wger.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook: post-install
     helm.sh/hook-weight: "0"
@@ -24,36 +22,25 @@ spec:
         app.kubernetes.io/name: {{ .Release.Name }}-setup-powersync-storage
     spec:
       restartPolicy: Never
-      serviceAccountName: {{ .Release.Name }}-powersync-initdb
+      {{- with .Values.app.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: setup-powersync-storage
-          image: docker.io/alpine:latest
+          image: {{ include "wger.image" . | quote }}
+          imagePullPolicy: {{ .Values.app.global.image.pullPolicy }}
+          command: ["./manage.py", "setup-powersync-storage"]
+          env:
+            {{- include "wger.env" . | indent 12 }}
+            {{- include "database.settings" . | indent 10 }}
+            {{- include "powersync.settings" . | indent 10 }}
+            {{- include "wger.env.secrets" . | indent 10 }}
+      initContainers:
+        # wait for postgres, redis and a ready wger app pod — the app service
+        # only gets endpoints once the django migrations have run
+        - name: init-container
+          image: {{ .Values.app.global.initImage }}
+          imagePullPolicy: {{ .Values.app.global.image.pullPolicy }}
           command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-              # kubectl to talk to the API and exec into the wger pod
-              apk add --no-cache kubectl
-
-              # Wait for a wger app service to become Ready (post-install hooks do not
-              # block on the app Deployment being available).
-              until nc -zvw10 {{ $dbhost }} {{ $dbport }}; do
-                echo "Waiting for postgres service ({{ $dbhost }}:{{ $dbport }}) ";
-                sleep 2;
-              done
-              until nc -zvw10 {{ .Release.Name }}-redis {{ .Values.redis.service.serverPort }}; do
-                echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ .Values.redis.service.serverPort }})";
-                sleep 2;
-              done
-              until nc -zvw10 {{ .Release.Name }}-app {{ $svcport }}; do
-                echo "Waiting for wger app service ({{ .Release.Name }}-app:{{ $svcport }})";
-                sleep 2;
-              done
-
-              # Resolve the pod name and run the management command in the wger container.
-              POD=$(kubectl -n {{ .Release.Namespace }} get pods \
-                -l "app.kubernetes.io/name={{ .Release.Name }}-app" \
-                -o jsonpath="{.items[0].metadata.name}")
-              echo "Running setup-powersync-storage in pod/$POD ..."
-              kubectl -n {{ .Release.Namespace }} exec "$POD" -c wger -- ./manage.py setup-powersync-storage
+          {{- include "initContainer.app.command" . | indent 10 }}

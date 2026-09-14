@@ -56,11 +56,16 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.global.image.registry`   | Image to use for the wger deployment                  | String  | `docker.io`   |
 | `app.global.image.repository` | Image to use for the wger deployment                  | String  | `wger/server` |
 | `app.global.image.tag`        | Takes the `Chart.yaml` `appversion` when empty. wger is developed as a rolling release | String | `latest` |
-| `app.global.image.PullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `Always` |
+| `app.global.image.pullPolicy` | [Pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use for the image | String | `IfNotPresent` |
+| `app.global.initImage`        | Image used by the wait-for-service initContainers | String | `docker.io/busybox:1.37` |
 | `app.global.annotations`      | Annotations to attach to each resource, apart from the ingress and the persistence objects | Dictionary | `{}` |
 | `app.global.replicas`         | Number of webserver instances that should be running. | Integer | `1`           |
 | `app.global.securityContext`  | Pod security context                                  | Object  | see [values.yaml](charts/wger/values.yaml) |
 | `app.global.proxyCount`       | Count of proxies                                      | String  | `1`           |
+| `app.global.useXForwardedHost` | Build absolute URLs from the `X-Forwarded-Host` header (`USE_X_FORWARDED_HOST`) | Boolean | `false` |
+| `app.timezone`                | Server timezone, set it **before** the first 2.7 upgrade and keep it fixed | String | `UTC` |
+| `app.maxSessionLengthHours`   | Maximum length of a workout session, in hours (`WGER_MAX_SESSION_LENGTH_HOURS`) | Integer | `5` |
+| `app.showAppStoreLinks`       | Show the links to the mobile app stores (`WGER_SHOW_APP_STORE_LINKS`) | Boolean | `true` |
 
 ### Mail
 
@@ -71,7 +76,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.mail.port`          | Mailserver Port                              | String  | `587`           |
 | `app.mail.user`          | Mailserver User                              | String  | `null`          |
 | `app.mail.from_email`    | From Email Address                           | String  | `null`          |
-| `app.mail.secret.name`   | Name of the secret for the mail password     | String  | `mail`          |
+| `app.mail.secret.name`   | Name of the secret for the mail password     | String  | `<release>-mail`          |
 | `app.mail.secret.key`    | Key in the secret used for the mail password | String  | `mail-password` |
 | `app.mail.secret.update` | Enable or disable changes to the secret with the values | Boolean | `false` |
 | `app.mail.django_admins` | Django admins to receive internal server error, don't enable it when not needed | String | `null` |
@@ -81,7 +86,7 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 
 | Name                                                   | Description                          | Type   | Default Value |
 |--------------------------------------------------------|--------------------------------------|--------|---------------|
-| `app.django.secret.name`                               | Name of the secret                   | String | `django` |
+| `app.django.secret.name`                               | Name of the secret                   | String | `<release>-django` |
 | `app.django.secret.key`                                | Key for the `SECRET_KEY`             | String | `randAlphaNum 50` |
 | `app.django.cache.timeout`                             | Cache timeout in seconds             | String | `1296000` |
 | `app.django.existingDatabase.enabled`                  | Enable existing database, you need to set `postgres.enabled: false` | Boolean | `false` |
@@ -93,8 +98,8 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.django.existingDatabase.dbpw`                     | Database Password                    | String | `null` |
 | `app.django.existingDatabase.existingSecret.name`      | Name of a existing secret. If you like to use this for the database credentials | String | `null` |
 | `app.django.existingDatabase.existingSecret.dbnameKey` | Key containing the database name. Optional; will take `app.django.existingDatabase.dbname` if not set | String | `null` |
-| `app.django.existingDatabase.existingSecret.dbuserKey` | Key containing the database user     | String | `null` |
-| `app.django.existingDatabase.existingSecret.dbpwKey`   | Key containing the database password | String | `null` |
+| `app.django.existingDatabase.existingSecret.dbuserKey` | Key containing the database user     | String | `USERDB_USER` |
+| `app.django.existingDatabase.existingSecret.dbpwKey`   | Key containing the database password | String | `USERDB_PASSWORD` |
 
 
 ### Service for the wger app
@@ -115,7 +120,7 @@ Celery requires persistent volumes.
 | `celery.enabled`                 | Enable celery for sync        | Boolean    | `True`            |
 | `celery.annotations`             | Annotations                   | Dictionary | `{}`              |
 | `celery.replicas`                | Enable celery for sync        | Integer    | `1`               |
-| `celery.replicasWorker`          | Enable celery for sync        | Integer    | `1`               |
+| `celery.replicasWorker`          | Number of celery worker replicas | Integer    | `1`               |
 | `celery.workerConcurrency`       | Set to one if using sqlite    | Integer    | `4`               |
 | `celery.securityContext`         | Pod security context          | Object     | see [values.yaml](values.yaml) |
 | `celery.syncExercises`           | sync exercises                | Boolean    | `True`            |
@@ -125,7 +130,7 @@ Celery requires persistent volumes.
 | `celery.warmupExercisesCacheAll` | warmup all exercises          | Boolean    | `True`            |
 | `celery.ingredientsFrom`         | source for ingredients, possible values `WGER`,`OFF` | String  | `WGER`  |
 | `celery.flower.enabled`          | enable flower webinterface for celery | Boolean    | `False`   |
-| `celery.flower.secret.name`      | Name of the secret            | String     | `flower`          |
+| `celery.flower.secret.name`      | Name of the secret            | String     | `<release>-flower`          |
 | `celery.flower.secret.password`  | Password for the webinterface | String     | `randAlphaNum 50` |
 
 
@@ -133,12 +138,25 @@ Celery requires persistent volumes.
 
 | Name                           | Description                              | Type    | Default Value     |
 |--------------------------------|------------------------------------------|---------|-------------------|
-| `app.jwt.secret.name`          | Name of the secret                       | String  | `jwt`             |
-| `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `false`           |
+| `app.jwt.keygenImage`          | Image used by the JWT keygen hook job    | String  | `docker.io/alpine:3.22` |
+| `app.jwt.secret.name`          | Name of the secret                       | String  | `<release>-jwt`      |
+| `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `false`              |
 | `app.jwt.secret.privateKey`    | Private Key for JWT                      | String  | auto created new key |
 | `app.jwt.secret.publicKey`     | Public Key for JWT                       | String  | auto created new key |
-| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`              |
-| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String  | `24`              |
+| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`                 |
+| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String  | `2880`               |
+
+
+## OAuth2 Provider
+
+wger can act as an OAuth2/OIDC provider. Clients have to be registered manually,
+see the [wger documentation](https://wger.readthedocs.io/en/latest/administration/oauth2_provider.html).
+
+| Name                                   | Description                                  | Type    | Default Value     |
+|----------------------------------------|----------------------------------------------|---------|-------------------|
+| `app.oauth2Provider.enabled`           | Enable the OAuth2 provider (`IDP_OIDC_PRIVATE_KEY`) | Boolean | `false`   |
+| `app.oauth2Provider.secret.name`       | Name of the secret                           | String  | `<release>-oidc`  |
+| `app.oauth2Provider.secret.privateKey` | RS256 signing key in PEM format              | String  | auto created new key |
 
 
 ## Axes
@@ -169,10 +187,9 @@ Celery requires persistent volumes.
 | `powersync.image.registry`    | Image registry                       | String     | `docker.io`    |
 | `powersync.image.repository`  | Image repostory                      | String     | `journeyapps/powersync-service` |
 | `powersync.image.tag`         | Image tag                            | String     | `latest`       |
-| `powersync.image.PullPolicy`  | Image pull policy                    | String     | `IfNotPresent` |
+| `powersync.image.pullPolicy`  | Image pull policy                    | String     | `IfNotPresent` |
 | `powersync.annotations`       | Annotations to attach to the service | Dictionary | `{}`           |
 | `powersync.replicas`          | Number of webserver instances that should be running | Integer | `1` |
-| `powersync.replicasWorker`    | Number replica workers               | Integer    | `1`            |
 | `powersync.securityContext`   | Pod security context                 | Object     | see [values.yaml](charts/wger/values.yaml) |
 | `powersync.serviceApi.type`        | Sets the http service type            | String     | `ClusterIP`    |
 | `powersync.serviceApi.port`        | Port for the service                  | Integer    | `8080`         |
@@ -182,6 +199,9 @@ Celery requires persistent volumes.
 | `powersync.servicePrometheus.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
 | `powersync.configPath`        | Path to the powersync config                      | String     | `/config/powersync.yaml` |
 | `powersync.jwksURL`           | URI for JWK auth                     | String     | `http://{{ .Release.Name }}-http:80/api/v2/powersync-keys` |
+| `powersync.compact.enabled`   | Run a CronJob compacting the powersync bucket storage | Boolean | `true` |
+| `powersync.compact.schedule`  | Cron schedule of the compact job     | String     | `0 3 * * *`    |
+| `powersync.compact.resources` | Resources for the compact job        | Object     | `null`         |
 
 
 ## Ingress

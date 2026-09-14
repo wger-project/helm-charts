@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
+    {{- include "wger.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.app.global.replicas }}
   selector:
@@ -15,11 +16,11 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}-nginx
       annotations:
-    {{- with .Values.app.global.annotations }}
-      {{- range $key, $value := . }}
-        {{ $key }}: {{ $value | quote}}
-      {{- end }}
-    {{- end }}
+        # restart when the mounted nginx config changes
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-nginx.yaml") . | sha256sum }}
+        {{- with .Values.app.global.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.app.global.securityContext }}
       securityContext:
@@ -32,7 +33,7 @@ spec:
           imagePullPolicy: {{ .Values.nginx.imagePullPolicy }}
           env:
             - name: TZ
-              value: {{ .Values.app.timezone | default "UTC" | quote }}
+              value: {{ .Values.app.timezone | quote }}
           ports:
             - name: http
               containerPort: 80
@@ -55,10 +56,10 @@ spec:
       volumes:
         - name: wger-media
           persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.media | default "wger-media" | quote }}
+            claimName: {{ .Values.app.persistence.existingClaim.media | default (print .Release.Name "-media") | quote }}
         - name: wger-static
           persistentVolumeClaim:
-            claimName: {{ .Values.app.persistence.existingClaim.static | default "wger-static" | quote }}
+            claimName: {{ .Values.app.persistence.existingClaim.static | default (print .Release.Name "-static") | quote }}
         - name: nginx-conf
           configMap:
             name: {{ .Release.Name }}-nginx-configmap
