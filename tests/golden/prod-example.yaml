@@ -2081,6 +2081,118 @@ spec:
           persistentVolumeClaim:
             claimName: wger-db
 ---
+# Source: wger/templates/cronjob-powersync-compact.yaml
+# daily compaction of the powersync bucket storage. Self-hosted instances are
+# not compacted automatically; the `compact` command of the service image
+# processes all buckets using the same config and storage as the service.
+# (`powersync compact` of the powersync-cli only supports PowerSync Cloud)
+# See https://docs.powersync.com/maintenance-ops/compacting-buckets
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: golden-powersync-compact
+  namespace: golden-ns
+  labels:
+    app.kubernetes.io/name: golden
+    app.kubernetes.io/instance: golden
+    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: wger-1.0.0
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: golden-powersync-compact
+        spec:
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          containers:
+            - name: powersync-compact
+              image: "docker.io/journeyapps/powersync-service:latest"
+              imagePullPolicy: IfNotPresent
+              env:              
+                - name: DJANGO_DB_HOST
+                  value: "golden-postgres"
+                - name: DJANGO_DB_PORT
+                  value: "5432"
+                - name: DJANGO_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name:  golden-postgres
+                      key: "USERDB_USER"
+                - name: DJANGO_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: golden-postgres
+                      key: "USERDB_PASSWORD"
+                - name: DJANGO_DB_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: golden-postgres
+                      key: "POSTGRES_DB"              
+                - name: JWT_PRIVATE_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: "golden-jwt"
+                      key: "private-key"
+                - name: JWT_PUBLIC_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: "golden-jwt"
+                      key: "public-key"
+                # This is the path (inside the container) to the YAML config file
+                # Alternatively the config path can be specified in the command
+                # e.g:
+                #   command: ['start', '-r', 'unified', '-c', '/config/powersync.yaml']
+                #
+                # The config file can also be specified in Base 64 encoding
+                # e.g.: Via an environment variable
+                #   POWERSYNC_CONFIG_B64: [base64 encoded content]
+                # or e.g.: Via a command line parameter
+                #    command: ['start', '-r', 'unified', '-c64', '[base64 encoded content]']
+                - name: POWERSYNC_CONFIG_PATH
+                  value: "/config/powersync.yaml"
+                # Sync rules can be specified as base 64 encoded YAML
+                # e.g: Via an environment variable
+                # POWERSYNC_SYNC_RULES_B64: "[base64 encoded sync rules]"
+                # or e.g.: Via a command line parameter
+                #     command: ['start', '-r', 'unified', '-sync64', '[base64 encoded content]']
+                - name: PS_JWKS_URL
+                  value: "http://golden-http:80/api/v2/powersync-keys"
+                - name: PS_PORT
+                  value: "8080"
+                - name: POWERSYNC_URL_PATH
+                  value: "ps"
+                # ps database settings
+                - name: PS_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: "golden-powersync"
+                      key: "user"
+                - name: PS_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: "golden-powersync"
+                      key: "pw"
+                - name: PS_STORAGE_PG_URI
+                  value: "postgres://$(PS_DB_USER):$(PS_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
+                - name: PS_DATABASE_URI
+                  value: "postgres://$(DJANGO_DB_USER):$(DJANGO_DB_PASSWORD)@$(DJANGO_DB_HOST):$(DJANGO_DB_PORT)/$(DJANGO_DB_DATABASE)"
+              args: ["compact"]
+              volumeMounts:
+                - name: powersync-conf
+                  mountPath: /config
+          volumes:
+            - name: powersync-conf
+              configMap:
+                name: golden-powersync-configmap
+---
 # Source: wger/templates/ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress

@@ -1,0 +1,50 @@
+# daily compaction of the powersync bucket storage. Self-hosted instances are
+# not compacted automatically; the `compact` command of the service image
+# processes all buckets using the same config and storage as the service.
+# (`powersync compact` of the powersync-cli only supports PowerSync Cloud)
+# See https://docs.powersync.com/maintenance-ops/compacting-buckets
+{{- if .Values.powersync.compact.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-powersync-compact
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    {{- include "wger.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.powersync.compact.schedule | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ .Release.Name }}-powersync-compact
+        spec:
+          restartPolicy: Never
+          {{- with .Values.powersync.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: powersync-compact
+              image: "{{ .Values.powersync.image.registry }}/{{ .Values.powersync.image.repository }}:{{ .Values.powersync.image.tag }}"
+              imagePullPolicy: {{ .Values.powersync.image.pullPolicy }}
+              env:
+                {{- include "database.settings" . | indent 14 }}
+                {{- include "powersync.settings" . | indent 14 }}
+              args: ["compact"]
+              volumeMounts:
+                - name: powersync-conf
+                  mountPath: /config
+              {{- with .Values.powersync.compact.resources }}
+              resources:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+          volumes:
+            - name: powersync-conf
+              configMap:
+                name: {{ .Release.Name }}-powersync-configmap
+{{- end }}

@@ -183,6 +183,9 @@ Celery requires persistent volumes.
 | `powersync.servicePrometheus.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
 | `powersync.configPath`        | Path to the powersync config                      | String     | `/config/powersync.yaml` |
 | `powersync.jwksURL`           | URI for JWK auth                     | String     | `http://{{ .Release.Name }}-http:80/api/v2/powersync-keys` |
+| `powersync.compact.enabled`   | Run a CronJob compacting the powersync bucket storage | Boolean | `true` |
+| `powersync.compact.schedule`  | Cron schedule of the compact job     | String     | `0 3 * * *`    |
+| `powersync.compact.resources` | Resources for the compact job        | Object     | `null`         |
 
 
 ## Ingress

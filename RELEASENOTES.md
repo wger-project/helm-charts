@@ -85,6 +85,10 @@ error message instead of silently ignoring the setting.
 
 ### Other changes
 
+* new CronJob `<release>-powersync-compact` runs the powersync service's
+  `compact` command daily (at 03:00) to reclaim sync bucket storage, which
+  self-hosted instances don't do on their own. Configure via
+  `powersync.compact.enabled` / `schedule` / `resources`
 * initContainer and hook images are pinned and configurable:
   `app.global.initImage` (default `docker.io/busybox:1.37`) and
   `app.jwt.keygenImage` (default `docker.io/alpine:3.22`)

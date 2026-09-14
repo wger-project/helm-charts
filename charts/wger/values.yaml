@@ -171,6 +171,12 @@ powersync:
   configPath: "/config/powersync.yaml"
   # null derives the URL from the nginx service of this release
   jwksURL: null
+  # daily CronJob compacting the powersync bucket storage
+  compact:
+    enabled: true
+    # cron format, in the timezone of the kube-controller-manager (usually UTC)
+    schedule: "0 3 * * *"
+    resources: null
   resources: null
     # requests:
     #   memory: 512Mi
