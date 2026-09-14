@@ -139,12 +139,12 @@ Celery requires persistent volumes.
 | Name                           | Description                              | Type    | Default Value     |
 |--------------------------------|------------------------------------------|---------|-------------------|
 | `app.jwt.keygenImage`          | Image used by the JWT keygen hook job    | String  | `docker.io/alpine:3.22` |
-| `app.jwt.secret.name`          | Name of the secret                       | String  | `<release>-jwt`             |
-| `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `false`           |
+| `app.jwt.secret.name`          | Name of the secret                       | String  | `<release>-jwt`      |
+| `app.jwt.secret.update`        | Update content of the current secret     | Boolean | `false`              |
 | `app.jwt.secret.privateKey`    | Private Key for JWT                      | String  | auto created new key |
 | `app.jwt.secret.publicKey`     | Public Key for JWT                       | String  | auto created new key |
-| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`              |
-| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String  | `24`              |
+| `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`                 |
+| `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String  | `2880`               |
 
 
 ## OAuth2 Provider
