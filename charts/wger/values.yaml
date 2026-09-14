@@ -106,7 +106,7 @@ app:
     # The lifetime duration of the access token, in minutes
     accessTokenLifetime: 10
     # The lifetime duration of the refresh token, in hours
-    refreshTokenLifetime: 24
+    refreshTokenLifetime: 2880
   # OAuth2/OIDC provider, lets other applications log in with a wger account
   # clients have to be registered manually, see
   # https://wger.readthedocs.io/en/latest/administration/oauth2_provider.html
