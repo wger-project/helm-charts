@@ -391,7 +391,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 data:
@@ -751,7 +751,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden-http
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -774,7 +774,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden-app
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -797,7 +797,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden-powersync-api
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -820,7 +820,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden-powersync-prometheus
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -964,7 +964,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -987,7 +987,7 @@ spec:
       containers:
         # celery beat
         - name: celery-beat
-          image: "docker.io/wger/server:2.6"
+          image: "docker.io/wger/server:2.7"
           imagePullPolicy: IfNotPresent
           env:            
             # get default env
@@ -1186,7 +1186,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -1209,7 +1209,7 @@ spec:
       containers:
         # celery worker
         - name: celery-worker
-          image: "docker.io/wger/server:2.6"
+          image: "docker.io/wger/server:2.7"
           imagePullPolicy: IfNotPresent
           env:            
             # get default env
@@ -1419,7 +1419,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -1478,7 +1478,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -1631,7 +1631,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -1659,7 +1659,7 @@ spec:
       containers:
         # wger app container
         - name: wger
-          image: "docker.io/wger/server:2.6"
+          image: "docker.io/wger/server:2.7"
           imagePullPolicy: IfNotPresent
           env:            
             # get default env
@@ -2084,7 +2084,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
 spec:
@@ -2277,7 +2277,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
   annotations:
@@ -2339,7 +2339,7 @@ metadata:
   labels:
     app.kubernetes.io/name: golden
     app.kubernetes.io/instance: golden
-    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/version: "2.7"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: wger-1.0.0
   annotations:
@@ -2358,7 +2358,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: setup-powersync-storage
-          image: "docker.io/wger/server:2.6"
+          image: "docker.io/wger/server:2.7"
           imagePullPolicy: IfNotPresent
           command: ["./manage.py", "setup-powersync-storage"]
           env:            

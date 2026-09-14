@@ -1,8 +1,11 @@
 
-## 2.0.0-alpha
+## 2.0.0-rc.1
 
 This is a maintainability release with **breaking changes** to resource names
 and two values keys. First make a backup of your database and media files.
+
+* upgrade to wger 2.7, also have a look at the release note of the wger app:
+  https://github.com/wger-project/wger/releases/tag/2.7
 
 ### Breaking: resources are now prefixed with the release name
 
