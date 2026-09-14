@@ -6,6 +6,28 @@ and two values keys. First make a backup of your database and media files.
 
 * upgrade to wger 2.7, also have a look at the release note of the wger app:
   https://github.com/wger-project/wger/releases/tag/2.7
+* **before upgrading** make sure `app.timezone` is set correctly and treat it as
+  fixed afterwards: the 2.7 migrations convert the old workout session dates
+  using this zone
+* new wger 2.7 settings: `app.maxSessionLengthHours` (default `5`),
+  `app.showAppStoreLinks` (default `true`) and `app.global.useXForwardedHost`
+  (default `false`)
+* powersync sync rules updated for wger 2.7: the removed `weight_weightentry`
+  table is gone, body weight entries are synced as measurements. Stop powersync
+  while the wger 2.7 database migrations run, then start it again (use
+  `powersync.replicas`, a `kubectl scale` is reverted by `helm upgrade`):
+
+  ```bash
+  helm upgrade ... --set powersync.replicas=0
+  kubectl -n <namespace> rollout status deploy <release>-app   # migrations done
+  helm upgrade ...
+  ```
+  PowerSync reprocesses all buckets once with the new rules.
+* powersync `api.parameters.max_parameter_query_results` raised to 10000 as a
+  workaround for the PSYNC_S2305 bug with large nutrition logs
+* new optional OAuth2/OIDC provider: `app.oauth2Provider.enabled` (default
+  `false`) creates the `<release>-oidc` secret with a generated signing key
+  (or `app.oauth2Provider.secret.privateKey`)
 
 ### Breaking: resources are now prefixed with the release name
 

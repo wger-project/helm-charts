@@ -3,6 +3,10 @@ app:
   # The server's timezone, for a list of possible names:
   # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
   timezone: "UTC"
+  # maximum length of a workout session in hours, sessions can span midnight
+  maxSessionLengthHours: 5
+  # show the links to the mobile app stores
+  showAppStoreLinks: true
   global:
     image:
       registry: docker.io
@@ -17,6 +21,9 @@ app:
     securityContext:
       fsGroup: 1000
     proxyCount: 1
+    # build absolute URLs (e.g. OAuth2 redirect URIs) from the X-Forwarded-Host
+    # header instead of the Host header. The nginx of this chart always sets it.
+    useXForwardedHost: false
   persistence:
     storageClass: null
     accessModes:
@@ -100,6 +107,17 @@ app:
     accessTokenLifetime: 10
     # The lifetime duration of the refresh token, in hours
     refreshTokenLifetime: 24
+  # OAuth2/OIDC provider, lets other applications log in with a wger account
+  # clients have to be registered manually, see
+  # https://wger.readthedocs.io/en/latest/administration/oauth2_provider.html
+  oauth2Provider:
+    enabled: false
+    secret:
+      # null defaults to <release>-oidc
+      name: null
+      # RS256 signing key in PEM format, e.g. from `./manage.py generate-oidc-key`
+      # null generates a random RSA key on first install
+      privateKey: null
   # axes Brute force login attacks
   # https://django-axes.readthedocs.io/en/latest/index.html
   axes:

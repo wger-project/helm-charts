@@ -62,6 +62,10 @@ For additional configuration of the Groundhog2k's PostgreSQL and Redis charts, p
 | `app.global.replicas`         | Number of webserver instances that should be running. | Integer | `1`           |
 | `app.global.securityContext`  | Pod security context                                  | Object  | see [values.yaml](charts/wger/values.yaml) |
 | `app.global.proxyCount`       | Count of proxies                                      | String  | `1`           |
+| `app.global.useXForwardedHost` | Build absolute URLs from the `X-Forwarded-Host` header (`USE_X_FORWARDED_HOST`) | Boolean | `false` |
+| `app.timezone`                | Server timezone, set it **before** the first 2.7 upgrade and keep it fixed | String | `UTC` |
+| `app.maxSessionLengthHours`   | Maximum length of a workout session, in hours (`WGER_MAX_SESSION_LENGTH_HOURS`) | Integer | `5` |
+| `app.showAppStoreLinks`       | Show the links to the mobile app stores (`WGER_SHOW_APP_STORE_LINKS`) | Boolean | `true` |
 
 ### Mail
 
@@ -141,6 +145,18 @@ Celery requires persistent volumes.
 | `app.jwt.secret.publicKey`     | Public Key for JWT                       | String  | auto created new key |
 | `app.jwt.accessTokenLifetime`  | Duration of the access token, in minutes | String  | `10`              |
 | `app.jwt.refreshTokenLifetime` | Duration of the refresh token, in hours  | String  | `24`              |
+
+
+## OAuth2 Provider
+
+wger can act as an OAuth2/OIDC provider. Clients have to be registered manually,
+see the [wger documentation](https://wger.readthedocs.io/en/latest/administration/oauth2_provider.html).
+
+| Name                                   | Description                                  | Type    | Default Value     |
+|----------------------------------------|----------------------------------------------|---------|-------------------|
+| `app.oauth2Provider.enabled`           | Enable the OAuth2 provider (`IDP_OIDC_PRIVATE_KEY`) | Boolean | `false`   |
+| `app.oauth2Provider.secret.name`       | Name of the secret                           | String  | `<release>-oidc`  |
+| `app.oauth2Provider.secret.privateKey` | RS256 signing key in PEM format              | String  | auto created new key |
 
 
 ## Axes

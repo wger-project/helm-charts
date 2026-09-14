@@ -33,6 +33,10 @@ environment:
     value: {{ .Values.app.timezone | quote }}
   - name: TIME_ZONE
     value: {{ .Values.app.timezone | quote }}
+  - name: WGER_MAX_SESSION_LENGTH_HOURS
+    value: {{ int .Values.app.maxSessionLengthHours | quote }}
+  - name: WGER_SHOW_APP_STORE_LINKS
+    value: {{ .Values.app.showAppStoreLinks | quote }}
   # email settings
   {{- if .Values.app.mail.enabled }}
   - name: ENABLE_EMAIL
@@ -93,6 +97,8 @@ environment:
   # is only used when throttling API requests.
   - name: NUMBER_OF_PROXIES
     value: {{ int .Values.app.global.proxyCount | quote }}
+  - name: USE_X_FORWARDED_HOST
+    value: {{ .Values.app.global.useXForwardedHost | quote }}
   # axes
   - name: AXES_ENABLED
   {{- if .Values.app.axes.enabled }}
@@ -214,6 +220,13 @@ environment:
       secretKeyRef:
         name: {{ include "wger.secretName.mail" . | quote }}
         key: {{ .Values.app.mail.secret.key | quote }}
+  {{- end }}
+  {{- if .Values.app.oauth2Provider.enabled }}
+  - name: IDP_OIDC_PRIVATE_KEY
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "wger.secretName.oidc" . | quote }}
+        key: "private-key"
   {{- end }}
   {{- /*
    to enable redis authentication additional settings in the values
@@ -401,6 +414,9 @@ environment:
 {{- define "wger.secretName.flower" -}}
 {{- .Values.celery.flower.secret.name | default (print .Release.Name "-flower") -}}
 {{- end -}}
+{{- define "wger.secretName.oidc" -}}
+{{- .Values.app.oauth2Provider.secret.name | default (print .Release.Name "-oidc") -}}
+{{- end -}}
 
 {{/*
  generate-or-preserve secret value
@@ -412,6 +428,8 @@ environment:
  Optional: "legacyName" — pre-2.0 unprefixed secret name; its value is
  reused once when the release-prefixed secret does not exist yet, so
  upgrades keep their generated passwords.
+ Optional: "rsa" — generate a PEM encoded RSA private key instead of a
+ random string ("length" is ignored).
  Returns the plain (not base64 encoded) value.
 */}}
 {{- define "wger.secretValue" -}}
@@ -424,6 +442,8 @@ environment:
 {{- end -}}
 {{- if and $data (index $data .key) -}}
 {{- index $data .key | b64dec -}}
+{{- else if .rsa -}}
+{{- genPrivateKey "rsa" -}}
 {{- else -}}
 {{- randAlphaNum (.length | int) -}}
 {{- end -}}
@@ -446,6 +466,7 @@ environment:
          "redis" .Values.redis.auth
          "flower" .Values.celery.flower.secret
          "jwt" .Values.app.jwt.secret
+         "oidc" .Values.app.oauth2Provider
          "powersync" .Values.powersync.secretDatabase
     | toJson | sha256sum -}}
 {{- end -}}
