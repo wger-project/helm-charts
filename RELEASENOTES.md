@@ -1,5 +1,5 @@
 
-## 2.0.0-rc.1
+## 2.0.0
 
 This is a release with **breaking changes** to resource names
 and two values keys. First make a backup of your database and media files.

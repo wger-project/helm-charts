@@ -29,7 +29,7 @@ helm repo add github-wger https://wger-project.github.io/helm-charts
 
 helm install wger github-wger/wger \
   --timeout 15m \
-  --version 1.0.0 \
+  --version 2.0.0 \
   -n wger \
   --create-namespace
   -f values.yaml
@@ -341,6 +341,8 @@ echo "AXES_SENSITIVE_PARAMETERS = []" >>settings.py
 
 ## Upgrading
 
+Check the [RELEASENOTES.md](https://github.com/wger-project/helm-charts/blob/master/RELEASENOTES.md).
+
 Wger has started making releases from version 2.4, so from helm chart version 0.2.5 charts are pinned to a specific wger version.
 
 ```sh
@@ -356,7 +358,7 @@ helm -n wger list
 helm upgrade \
   --timeout 15m \
   --install wger github-wger/wger \
-  --version 1.0.0 \
+  --version 2.0.0 \
   -n wger \
   --create-namespace
   -f values.yaml
@@ -435,21 +437,16 @@ Now move away the current db in your storage, so that the new postges image will
 mv /var/lib/postgresql/data/pg /var/lib/postgresql/data/pg-$(date +%Y-%m-%d)
 ```
 
-Upgrade wger chart, but disable the wger django app, so that the database will not be created, for this you can temporary set the app replicas to `0` in your `values.yaml`:
-
-```yaml
-app:
-  global:
-    replicas: 0
-```
+Upgrade wger chart, but disable the wger django app, so that the database will not be created, for this you can temporary set the app replicas to `0`:
 
 ```bash
 helm upgrade \
   --timeout 15m \
   --install wger github-wger/wger \
-  --version 0.3.0 \
+  --version 2.0.0 \
   -n wger \
-  --create-namespace
+  --create-namespace \
+  --set app.global.replicas=0 \
   -f values.yaml
 ```
 
