@@ -1,7 +1,7 @@
 
-## 2.0.0-rc.1
+## 2.0.0
 
-This is a maintainability release with **breaking changes** to resource names
+This is a release with **breaking changes** to resource names
 and two values keys. First make a backup of your database and media files.
 
 * upgrade to wger 2.7, also have a look at the release note of the wger app:
@@ -123,7 +123,7 @@ error message instead of silently ignoring the setting.
 * removed unused values `app.proxyCount` (use `app.global.proxyCount`) and
   `powersync.replicasWorker`
 * removed the unused `REFRESH_TOKEN_LIFETIME` template fallback of 2880; the
-  effective default stays 24 (hours) as set in `values.yaml`
+  effective default stays 2880 (hours) as set in `values.yaml`
 * defaults now live in `values.yaml` instead of being duplicated in the
   templates; `app.mail.port` (587), `app.django.existingDatabase.engine`,
   `existingSecret.dbuserKey`/`dbpwKey` (`USERDB_USER`/`USERDB_PASSWORD`) and
