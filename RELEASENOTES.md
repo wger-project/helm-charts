@@ -9,6 +9,8 @@
   in the new `<release>-anubis` secret, challenges are stored in the redis of
   the release (database `3`). See the [Anubis](charts/wger/README.md#anubis-1)
   section of the README
+* redis subchart upgraded from 2.4.0 to 2.4.8 (redis 8.8.0 -> 8.10.2), no
+  configuration changes
 
 ## 2.0.0
 
