@@ -89,3 +89,51 @@ spec:
       targetPort: 9090
   selector:
     app.kubernetes.io/name: {{ .Release.Name }}-powersync
+{{- if .Values.anubis.enabled }}
+---
+# anubis
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Release.Name}}-anubis
+  namespace: {{.Release.Namespace}}
+  labels:
+    app.kubernetes.io/name: {{.Release.Name}}-anubis
+    {{- include "wger.labels" . | nindent 4 }}
+  {{- with .Values.anubis.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.anubis.service.type }}
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.anubis.service.port }}
+      targetPort: 3000
+  selector:
+    app.kubernetes.io/name: {{ .Release.Name }}-anubis
+---
+# anubis prometheus exporter
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Release.Name}}-anubis-metrics
+  namespace: {{.Release.Namespace}}
+  labels:
+    app.kubernetes.io/name: {{.Release.Name}}-anubis-metrics
+    {{- include "wger.labels" . | nindent 4 }}
+  {{- with .Values.anubis.serviceMetrics.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.anubis.serviceMetrics.type }}
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: {{ .Values.anubis.serviceMetrics.port }}
+      targetPort: 9090
+  selector:
+    app.kubernetes.io/name: {{ .Release.Name }}-anubis
+{{- end }}

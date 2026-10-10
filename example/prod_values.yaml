@@ -8,6 +8,7 @@
 # * enables axes with reverse proxy configuration listening for X_FORWARDED_FOR header
 # * modifies the gunicorn start parameters
 # * enables a ingress assuming cert-manager is setup with a let's encrypt issuer and traefik
+# * enables anubis to keep ai crawlers out
 #
 # Have a look at the packaged values.yaml for defaults and more settings:
 #   * https://github.com/wger-project/helm-charts/blob/master/charts/wger/values.yaml
@@ -36,6 +37,10 @@ app:
       media: wger-media
       static: wger-static
       celeryBeat: wger-celery-beat
+
+anubis:
+  enabled: true
+  webmasterEmail: wger@example.com
 
 ingress:
   enabled: true

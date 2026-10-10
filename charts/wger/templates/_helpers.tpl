@@ -400,6 +400,29 @@ environment:
 {{- end }}
 
 {{/*
+ initContainer anubis command
+ copies the policy from the ConfigMap into the shared emptyDir and appends
+ the `store:` section. Anubis can't read env in its policy file, so the
+ redis url (which may contain the redis password) is passed to this shell
+ as ANUBIS_STORE_URL instead of being rendered into the ConfigMap.
+ Waits for the redis of this release when its url is derived from it.
+*/}}
+{{- define "initContainer.anubis.command" }}
+- /bin/sh
+- -c
+- |
+  cp /policy/anubis-rules.yml /data/cfg/anubis-rules.yml
+  {{- if eq .Values.anubis.store.backend "valkey" }}
+  printf '\nstore:\n  backend: valkey\n  parameters:\n    url: "%s"\n' "$ANUBIS_STORE_URL" >> /data/cfg/anubis-rules.yml
+  {{- if not .Values.anubis.store.url }}
+  until nc -zvw10 {{ .Release.Name }}-redis {{ int .Values.redis.service.serverPort }}; do echo "Waiting for redis service ({{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }})"; sleep 2; done
+  {{- end }}
+  {{- else }}
+  printf '\nstore:\n  backend: memory\n  parameters: {}\n' >> /data/cfg/anubis-rules.yml
+  {{- end }}
+{{- end }}
+
+{{/*
  secret names: user override from values, or a release-prefixed default
 */}}
 {{- define "wger.secretName.django" -}}
@@ -417,6 +440,9 @@ environment:
 {{- define "wger.secretName.oidc" -}}
 {{- .Values.app.oauth2Provider.secret.name | default (print .Release.Name "-oidc") -}}
 {{- end -}}
+{{- define "wger.secretName.anubis" -}}
+{{- .Values.anubis.secret.name | default (print .Release.Name "-anubis") -}}
+{{- end -}}
 
 {{/*
  generate-or-preserve secret value
@@ -430,6 +456,8 @@ environment:
  upgrades keep their generated passwords.
  Optional: "rsa" — generate a PEM encoded RSA private key instead of a
  random string ("length" is ignored).
+ Optional: "hex" — generate 64 lowercase hex chars (a 256 bit key, e.g.
+ for ed25519) instead of a random string ("length" is ignored).
  Returns the plain (not base64 encoded) value.
 */}}
 {{- define "wger.secretValue" -}}
@@ -444,6 +472,8 @@ environment:
 {{- index $data .key | b64dec -}}
 {{- else if .rsa -}}
 {{- genPrivateKey "rsa" -}}
+{{- else if .hex -}}
+{{- randAlphaNum 64 | sha256sum -}}
 {{- else -}}
 {{- randAlphaNum (.length | int) -}}
 {{- end -}}
@@ -468,6 +498,7 @@ environment:
          "jwt" .Values.app.jwt.secret
          "oidc" .Values.app.oauth2Provider
          "powersync" .Values.powersync.secretDatabase
+         "anubis" .Values.anubis.secret
     | toJson | sha256sum -}}
 {{- end -}}
 
