@@ -29,7 +29,7 @@ helm upgrade --install wger . -n wger --create-namespace -f ../../example/prod_v
 
 ## CI / release
 
-- `.github/workflows/lint-test.yml` runs `ct lint` on PRs/pushes to `master`. The `ct install` step is **intentionally disabled** because the kind cluster can't provide `ReadWriteMany` storage, which celery requires.
+- `.github/workflows/lint-test.yml` runs `ct lint` and `ct install` (on a kind cluster, 15m helm timeout) on PRs/pushes to `master`. kind can't provide `ReadWriteMany` storage, so `charts/wger/ci/kind-values.yaml` installs with `ReadWriteOnce` claims, which all pods on the single kind node can share. `ct` installs the chart once per file in `charts/wger/ci/`.
 - `.github/workflows/chart-release.yml` runs `chart-releaser` on push to `master` and `dev`. It only packages a version not already released (`CR_SKIP_EXISTING: true`) and does **not** mark releases as latest. Bump `version` in `Chart.yaml` to cut a release.
 
 ## Architecture

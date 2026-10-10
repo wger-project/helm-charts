@@ -1,0 +1,10 @@
+# Values for the `ct install` step of the GitHub workflow, which runs the chart
+# on a single-node kind cluster. Every file in this directory is installed once.
+#
+# kind's local-path storage class can't provision ReadWriteMany volumes.
+# ReadWriteOnce only restricts a volume to one *node*: all pods of the single
+# kind node (app, nginx, celery worker) can still mount the same claim.
+app:
+  persistence:
+    accessModes:
+      - ReadWriteOnce
