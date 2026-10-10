@@ -15,6 +15,13 @@ data:
     upstream powersync {
         server {{.Release.Name}}-powersync-api.{{.Release.Namespace}}.svc.cluster.local:8080;
     }
+    {{- if .Values.anubis.enabled }}
+    # Anubis challenges browsers before they reach the wger app, the
+    # static/media files and the powersync api below bypass it.
+    upstream anubis {
+      server {{.Release.Name}}-anubis.{{.Release.Namespace}}.svc.cluster.local:{{ int .Values.anubis.service.port }} fail_timeout=0;
+    }
+    {{- end }}
 
     # JSON access log format compatible with the Loki/Alloy parser
     # (same field names as the Caddy parser, so the same dashboard works).
@@ -51,7 +58,11 @@ data:
       access_log /dev/stdout json_access;
 
       location / {
+        {{- if .Values.anubis.enabled }}
+        proxy_pass http://anubis;
+        {{- else }}
         proxy_pass http://app_server;
+        {{- end }}
 
         # Standard proxy headers
         proxy_set_header Host $http_host;

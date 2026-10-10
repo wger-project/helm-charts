@@ -1,4 +1,15 @@
 
+## 2.1.0
+
+* new optional [Anubis](https://anubis.techaro.lol) proof-of-work challenge in
+  front of the web UI, same setup as the wger docker repo: `anubis.enabled`
+  (default `false`) adds the `<release>-anubis` deployment and nginx proxies `/`
+  through it. Static/media files, the powersync api and (via the policy) the
+  REST, allauth and OAuth2 endpoints bypass the challenge. The signing key lives
+  in the new `<release>-anubis` secret, challenges are stored in the redis of
+  the release (database `3`). See the [Anubis](charts/wger/README.md#anubis-1)
+  section of the README
+
 ## 2.0.0
 
 This is a release with **breaking changes** to resource names

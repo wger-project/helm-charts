@@ -1,0 +1,142 @@
+{{- if .Values.anubis.enabled }}
+{{- if not (has .Values.anubis.store.backend (list "valkey" "memory")) }}
+{{- fail (print "anubis.store.backend must be 'valkey' or 'memory', got '" .Values.anubis.store.backend "'") }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-anubis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    {{- include "wger.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.anubis.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-anubis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-anubis
+      annotations:
+        {{- include "wger.rollme.annotations" . | indent 8 }}
+        # restart when the mounted policy changes
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-anubis.yaml") . | sha256sum }}
+        {{- with .Values.anubis.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.anubis.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        # anubis sits between nginx and the wger app, see
+        # https://anubis.techaro.lol/docs/admin/installation
+        - name: anubis
+          image: "{{ .Values.anubis.image.registry }}/{{ .Values.anubis.image.repository }}:{{ .Values.anubis.image.tag }}"
+          imagePullPolicy: {{ .Values.anubis.image.pullPolicy }}
+          env:
+            - name: BIND
+              value: ":3000"
+            - name: METRICS_BIND
+              value: ":9090"
+            - name: TARGET
+              value: "http://{{ .Release.Name }}-app:{{ int .Values.app.service.port }}"
+            - name: POLICY_FNAME
+              value: "/data/cfg/anubis-rules.yml"
+            # a secure cookie is never sent over plain http, which would
+            # challenge the browser in an endless loop
+            - name: COOKIE_SECURE
+              {{- if kindIs "invalid" .Values.anubis.cookieSecure }}
+              value: {{ and .Values.ingress.enabled .Values.ingress.tls | ternary "true" "false" | quote }}
+              {{- else }}
+              value: {{ .Values.anubis.cookieSecure | toString | quote }}
+              {{- end }}
+            {{- with .Values.anubis.webmasterEmail }}
+            - name: WEBMASTER_EMAIL
+              value: {{ . | quote }}
+            {{- end }}
+            # only redirect to our own host after a solved challenge
+            {{- if .Values.anubis.redirectDomains }}
+            - name: REDIRECT_DOMAINS
+              value: {{ .Values.anubis.redirectDomains | quote }}
+            {{- else if .Values.ingress.enabled }}
+            - name: REDIRECT_DOMAINS
+              value: {{ .Values.ingress.url | quote }}
+            {{- end }}
+            - name: ED25519_PRIVATE_KEY_HEX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "wger.secretName.anubis" . | quote }}
+                  key: "private-key-hex"
+            {{- with .Values.anubis.environment }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            periodSeconds: 10
+          volumeMounts:
+            - name: anubis-cfg
+              mountPath: /data/cfg
+              readOnly: true
+          {{- if .Values.anubis.resources }}
+          resources:
+            {{- with .Values.anubis.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+      initContainers:
+        # assembles the policy file: the rules from the ConfigMap plus the
+        # `store:` section, whose redis url may carry the redis password
+        - name: init-container
+          image: {{ .Values.app.global.initImage }}
+          imagePullPolicy: {{ .Values.app.global.image.pullPolicy }}
+          {{- if eq .Values.anubis.store.backend "valkey" }}
+          env:
+            {{- if .Values.anubis.store.url }}
+            - name: ANUBIS_STORE_URL
+              value: {{ .Values.anubis.store.url | quote }}
+            {{- else if .Values.redis.auth.enabled }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ print .Release.Name "-redis" | quote }}
+                  key: "redis-password"
+            - name: ANUBIS_STORE_URL
+              value: "redis://:$(REDIS_PASSWORD)@{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/3"
+            {{- else }}
+            - name: ANUBIS_STORE_URL
+              value: "redis://{{ .Release.Name }}-redis:{{ int .Values.redis.service.serverPort }}/3"
+            {{- end }}
+          {{- end }}
+          command:
+          {{- include "initContainer.anubis.command" . | indent 10 }}
+          volumeMounts:
+            - name: anubis-policy
+              mountPath: /policy
+              readOnly: true
+            - name: anubis-cfg
+              mountPath: /data/cfg
+      volumes:
+        - name: anubis-policy
+          configMap:
+            name: {{ .Release.Name }}-anubis-configmap
+        - name: anubis-cfg
+          emptyDir: {}
+{{- end }}

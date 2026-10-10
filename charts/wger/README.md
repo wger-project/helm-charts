@@ -11,6 +11,8 @@ This chart bootstraps a wger deployment on a Kubernetes cluster using the Helm p
 
 nginx is used to handle sessions and serves django's media and static files. gunicorn in the wger image processes the django code.
 
+Optionally [Anubis](https://anubis.techaro.lol) can be put between nginx and the wger app to keep AI crawlers and other bots out, see [Anubis](#anubis-1).
+
 
 ## Prerequisites
 
@@ -180,6 +182,35 @@ see the [wger documentation](https://wger.readthedocs.io/en/latest/administratio
 | `nginx.service.port`        | Port for the service                  | Integer    | `80`           |
 | `nginx.service.annotations` | Annotations to attach to the service  | Dictionary | `{}`           |
 
+## Anubis
+
+| Name                        | Description                           | Type       | Default Value  |
+|-----------------------------|---------------------------------------|------------|----------------|
+| `anubis.enabled`            | Put [Anubis](https://anubis.techaro.lol) between nginx and the wger app. If `false`, the options from below are ignored | Boolean | `false` |
+| `anubis.image.registry`     | Image registry                        | String     | `ghcr.io`      |
+| `anubis.image.repository`   | Image repository                      | String     | `techarohq/anubis` |
+| `anubis.image.tag`          | Image tag                             | String     | `v1.28.1`      |
+| `anubis.image.pullPolicy`   | Image pull policy                     | String     | `IfNotPresent` |
+| `anubis.annotations`        | Annotations to attach to the pods     | Dictionary | `{}`           |
+| `anubis.replicas`           | Number of anubis instances, needs the `valkey` store when more than one | Integer | `1` |
+| `anubis.securityContext`    | Pod security context                  | Object     | see [values.yaml](values.yaml) |
+| `anubis.service.type`       | Sets the anubis service type          | String     | `ClusterIP`    |
+| `anubis.service.port`       | Port for the service                  | Integer    | `3000`         |
+| `anubis.service.annotations` | Annotations to attach to the service | Dictionary | `{}`           |
+| `anubis.serviceMetrics.type` | Sets the prometheus service type     | String     | `ClusterIP`    |
+| `anubis.serviceMetrics.port` | Port for the prometheus service      | Integer    | `9090`         |
+| `anubis.serviceMetrics.annotations` | Annotations to attach to the prometheus service | Dictionary | `{}` |
+| `anubis.webmasterEmail`     | Contact address shown on the challenge and error pages (`WEBMASTER_EMAIL`) | String | `null` |
+| `anubis.cookieSecure`       | `Secure` flag of the challenge pass cookie (`COOKIE_SECURE`). `null` is `true` when the ingress of this chart uses tls, `false` otherwise | Boolean | `null` |
+| `anubis.redirectDomains`    | Comma separated [domains anubis may redirect to](https://anubis.techaro.lol/docs/admin/configuration/redirect-domains) after a solved challenge (`REDIRECT_DOMAINS`). `null` uses `ingress.url` when the ingress is enabled | String | `null` |
+| `anubis.secret.name`        | Name of the secret holding the ed25519 signing key | String | `<release>-anubis` |
+| `anubis.secret.privateKeyHex` | Hex encoded ed25519 private key (64 chars, e.g. `openssl rand -hex 32`), `null` generates one on first install | String | `null` |
+| `anubis.policy`             | [Bot policy](https://anubis.techaro.lol/docs/admin/policies) without a `store:` section, `null` uses the [default policy](templates/configmap-anubis.yaml) of the chart | String | `null` |
+| `anubis.store.backend`      | Challenge storage: `valkey` (redis) or `memory` | String | `valkey` |
+| `anubis.store.url`          | Redis url for the `valkey` store, `null` uses the redis of this release (database `3`) | String | `null` |
+| `anubis.environment`        | Array of additional [environment variables](https://anubis.techaro.lol/docs/admin/installation#environment-variables) for the anubis container | Array | `[]` |
+| `anubis.resources`          | Resources for the anubis container    | Object     | `null`         |
+
 ## Powersync
 
 | Name                        | Description                           | Type       | Default Value  |
@@ -338,6 +369,50 @@ To temporary disable privacy mode to see the blocked ip in the log you can login
 echo "AXES_SENSITIVE_PARAMETERS = []" >>settings.py
 ```
 
+
+## Anubis
+
+* https://anubis.techaro.lol
+
+If your wger instance is reachable from the internet, AI crawlers will find it and
+flood it with requests. Anubis is a proof-of-work challenge the browser has to
+solve once before it gets to the wger app, the same setup as the
+[wger docker repo](https://github.com/wger-project/docker) uses. Enable it with:
+
+```yaml
+anubis:
+  enabled: true
+  webmasterEmail: hello@example.com
+```
+
+This adds the `<release>-anubis` deployment and nginx proxies `/` through it:
+
+```
+ingress -> nginx -> anubis -> wger app
+                 -> /static/, /media/ (served by nginx)
+                 -> /ps/ (powersync)
+```
+
+Static and media files and the powersync api never pass anubis, and the
+[default policy](templates/configmap-anubis.yaml) allows the REST api
+(`/api/v2`), allauth and the OAuth2 endpoints, so the mobile app and api
+clients are not affected. Set `anubis.policy` to replace the whole policy.
+
+Anubis stores the issued challenges in the redis of this release (database `3`)
+by default, so several replicas share them and a restart does not challenge
+everybody again. The redis password is taken from the `<release>-redis` secret.
+If your password contains characters that are not allowed in a url, set
+`anubis.store.url` with the encoded password, or use `anubis.store.backend: memory`
+for a single replica.
+
+The challenge pass cookies are signed with a key from the `<release>-anubis`
+secret, generated on the first install. Rotating it (`anubis.secret.privateKeyHex`)
+challenges all visitors again.
+
+`app.global.proxyCount` can stay at `1`: anubis flattens the `X-Forwarded-For`
+header to the real client address before passing the request on.
+
+Metrics are exposed on the `<release>-anubis-metrics` service.
 
 ## Upgrading
 

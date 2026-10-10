@@ -21,10 +21,6 @@ helm template wger . --set celery.enabled=true   # render with a flag toggled
 # Lint as CI does (chart-testing). Compares against the target branch.
 ct lint --target-branch master
 
-# Golden-file template tests (run from the repo root). CI fails on any diff.
-tests/golden-test.sh
-tests/golden-test.sh --update   # after intentional changes; review git diff of tests/golden/
-
 # Install / upgrade against a live cluster
 helm upgrade --install wger . -n wger --create-namespace -f ../../example/prod_values.yaml
 ```
@@ -38,10 +34,11 @@ helm upgrade --install wger . -n wger --create-namespace -f ../../example/prod_v
 
 ## Architecture
 
-The chart renders **five separate Deployments** (one `templates/deployment-<component>.yaml` file each; celery and celery-worker share `deployment-celery.yaml`), each named `{{ .Release.Name }}-<component>`:
+The chart renders **six separate Deployments** (one `templates/deployment-<component>.yaml` file each; celery and celery-worker share `deployment-celery.yaml`), each named `{{ .Release.Name }}-<component>`:
 
 - **`-app`** (`deployment-wger.yaml`) — the wger Django server (gunicorn). Has a busybox initContainer (`initContainer.pgonly.command`) that blocks until postgres and redis are reachable.
-- **`-nginx`** — reverse proxy serving Django's media/static files; gated on production setups needing persistent storage.
+- **`-nginx`** — reverse proxy serving Django's media/static files; gated on production setups needing persistent storage. With `anubis.enabled` its `location /` proxies to the anubis service instead of the app; `/static/`, `/media/` and `/ps/` always bypass anubis.
+- **`-anubis`** (`deployment-anubis.yaml`, optional, `anubis.enabled=false` by default) — `ghcr.io/techarohq/anubis` proof-of-work challenge between nginx and the app, mirroring the wger docker repo's `anubis-rules.yml`. The bot policy is a ConfigMap (`configmap-anubis.yaml`, overridable as a whole via `anubis.policy`); because Anubis cannot read env vars in its policy file, a busybox initContainer (`initContainer.anubis.command`) copies the policy into an emptyDir and appends the `store:` section with the redis URL (password via `$(REDIS_PASSWORD)` from the `{Release}-redis` secret). The ed25519 signing key is the `{Release}-anubis` secret (`wger.secretValue` with `hex`). `COOKIE_SECURE` derives from `ingress.enabled && ingress.tls` and `REDIRECT_DOMAINS` from `ingress.url` unless `anubis.cookieSecure` / `anubis.redirectDomains` are set.
 - **`-powersync`** — `journeyapps/powersync-service` for the mobile app's offline sync. Connects to the same postgres DB via a dedicated `powersync` DB user. Its storage schema is initialized by a **post-install hook Job** (`templates/hooks/setup-powersync-storage.yaml`) that runs `./manage.py setup-powersync-storage` in its own pod using the wger image and the same env as the app container (no RBAC needed); an initContainer waits for postgres/redis and the app service (endpoints appear only after migrations). This requires the django DB user to be a superuser, granted via the `wger-pg-init` ConfigMap (`configmap-postgres.yaml`) mounted as a postgres init script.
 - **`-celery`** — celery-beat scheduler + optional celery-flower web UI. Only meaningful when `celery.enabled=true`.
 - **`-celery-worker`** — celery task workers. Its initContainer (`initContainer.web.command`) additionally waits for the nginx service.
