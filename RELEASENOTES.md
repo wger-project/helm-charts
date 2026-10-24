@@ -1,14 +1,17 @@
 
 ## 2.1.0
 
-* new optional [Anubis](https://anubis.techaro.lol) proof-of-work challenge in
-  front of the web UI, same setup as the wger docker repo: `anubis.enabled`
-  (default `false`) adds the `<release>-anubis` deployment and nginx proxies `/`
-  through it. Static/media files, the powersync api and (via the policy) the
-  REST, allauth and OAuth2 endpoints bypass the challenge. The signing key lives
-  in the new `<release>-anubis` secret, challenges are stored in the redis of
-  the release (database `3`). See the [Anubis](charts/wger/README.md#anubis-1)
-  section of the README
+* new [Anubis](https://anubis.techaro.lol) proof-of-work challenge in front of
+  the web UI, same setup as the wger docker repo: the `<release>-anubis`
+  deployment is added and nginx proxies `/` through it, so browsers solve a
+  challenge once before reaching wger. It is **enabled by default** — set
+  `anubis.enabled: false` to keep the previous behaviour. Static/media files,
+  the powersync api and (via the policy) the REST, allauth and OAuth2 endpoints
+  bypass the challenge, so the mobile app and api clients are not affected.
+  The signing key lives in the new `<release>-anubis` secret, challenges are
+  stored in the redis of the release (database `3`). Optionally set
+  `anubis.webmasterEmail` to show a contact address on the challenge and error
+  pages. See the [Anubis](charts/wger/README.md#anubis-1) section of the README
 * redis subchart upgraded from 2.4.0 to 2.4.8 (redis 8.8.0 -> 8.10.2), no
   configuration changes
 
