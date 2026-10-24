@@ -11,7 +11,7 @@ This chart bootstraps a wger deployment on a Kubernetes cluster using the Helm p
 
 nginx is used to handle sessions and serves django's media and static files. gunicorn in the wger image processes the django code.
 
-Optionally [Anubis](https://anubis.techaro.lol) can be put between nginx and the wger app to keep AI crawlers and other bots out, see [Anubis](#anubis-1).
+By default [Anubis](https://anubis.techaro.lol) sits between nginx and the wger app to keep AI crawlers and other bots out, see [Anubis](#anubis-1).
 
 
 ## Prerequisites
@@ -186,7 +186,7 @@ see the [wger documentation](https://wger.readthedocs.io/en/latest/administratio
 
 | Name                        | Description                           | Type       | Default Value  |
 |-----------------------------|---------------------------------------|------------|----------------|
-| `anubis.enabled`            | Put [Anubis](https://anubis.techaro.lol) between nginx and the wger app. If `false`, the options from below are ignored | Boolean | `false` |
+| `anubis.enabled`            | Put [Anubis](https://anubis.techaro.lol) between nginx and the wger app. If `false`, the options from below are ignored | Boolean | `true` |
 | `anubis.image.registry`     | Image registry                        | String     | `ghcr.io`      |
 | `anubis.image.repository`   | Image repository                      | String     | `techarohq/anubis` |
 | `anubis.image.tag`          | Image tag                             | String     | `v1.28.1`      |
@@ -200,7 +200,7 @@ see the [wger documentation](https://wger.readthedocs.io/en/latest/administratio
 | `anubis.serviceMetrics.type` | Sets the prometheus service type     | String     | `ClusterIP`    |
 | `anubis.serviceMetrics.port` | Port for the prometheus service      | Integer    | `9090`         |
 | `anubis.serviceMetrics.annotations` | Annotations to attach to the prometheus service | Dictionary | `{}` |
-| `anubis.webmasterEmail`     | Contact address shown on the challenge and error pages (`WEBMASTER_EMAIL`) | String | `null` |
+| `anubis.webmasterEmail`     | Optional contact address shown on the challenge and error pages (`WEBMASTER_EMAIL`), `null` shows the pages without one | String | `null` |
 | `anubis.cookieSecure`       | `Secure` flag of the challenge pass cookie (`COOKIE_SECURE`). `null` is `true` when the ingress of this chart uses tls, `false` otherwise | Boolean | `null` |
 | `anubis.redirectDomains`    | Comma separated [domains anubis may redirect to](https://anubis.techaro.lol/docs/admin/configuration/redirect-domains) after a solved challenge (`REDIRECT_DOMAINS`). `null` uses `ingress.url` when the ingress is enabled | String | `null` |
 | `anubis.secret.name`        | Name of the secret holding the ed25519 signing key | String | `<release>-anubis` |
@@ -377,11 +377,12 @@ echo "AXES_SENSITIVE_PARAMETERS = []" >>settings.py
 If your wger instance is reachable from the internet, AI crawlers will find it and
 flood it with requests. Anubis is a proof-of-work challenge the browser has to
 solve once before it gets to the wger app, the same setup as the
-[wger docker repo](https://github.com/wger-project/docker) uses. Enable it with:
+[wger docker repo](https://github.com/wger-project/docker) uses. It is enabled
+by default (set `anubis.enabled: false` to turn it off). Optionally set a
+contact address to show on the challenge and error pages:
 
 ```yaml
 anubis:
-  enabled: true
   webmasterEmail: hello@example.com
 ```
 
